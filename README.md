@@ -280,7 +280,9 @@ backup/
 ## 구현 홈페이지
 
 - 서비스: (TODO: 배포 링크)
-- API 문서: (TODO: Swagger UI 링크)
+- API 문서: 서버 실행 후 [Swagger UI](http://localhost:8080/swagger-ui/index.html)
+- OpenAPI 명세: 서버 실행 후 [JSON 명세](http://localhost:8080/v3/api-docs)
+- 구현된 컨트롤러를 기준으로 API 문서가 자동 생성됩니다. DB 등 서버 실행에 필요한 설정을 먼저 완료해야 합니다.
 - 주요 화면: (TODO: 구현 화면 또는 GIF)
 
 ## 프로젝트 회고록
