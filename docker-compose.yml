@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16
+    container_name: monew_db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD : ${DB_PASSWORD}
+      POSTGRES_DB : monew_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - monew_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: monew_app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/monew_db
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+volumes:
+  monew_db_data:
+
