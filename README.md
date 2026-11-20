@@ -10,7 +10,7 @@
 | (TODO: 팀원 2) | (TODO: GitHub 링크) | 관심사 및 구독 |
 | (TODO: 팀원 3) | (TODO: GitHub 링크) | 뉴스 기사 및 뉴스 수집 |
 | (TODO: 팀원 4) | (TODO: GitHub 링크) | 댓글 및 좋아요 |
-| (TODO: 팀원 5) | (TODO: GitHub 링크) | 알림 및 기사 백업·복구 |
+| 김현수 | [uhae451](https://github.com/uhae451) | 알림 및 기사 백업·복구 |
 
 ## 프로젝트 소개
 
@@ -159,7 +159,7 @@ Naver News API와 한국경제·조선일보·연합뉴스 RSS를 통합하는 �
 
 ### 5번 알림 및 기사 백업과 복구
 
-담당자: (TODO: 이름 / GitHub)
+담당자: 김현수 | [uhae451](https://github.com/uhae451)
 
 | Method | 경로 | 기능 |
 | --- | --- | --- |
