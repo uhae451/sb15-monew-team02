@@ -6,11 +6,11 @@
 
 | 이름 | GitHub | 담당 영역 |
 | --- | --- | --- |
-| (TODO: 팀원 1) | (TODO: GitHub 링크) | 사용자 및 사용자 활동 내역 |
-| (TODO: 팀원 2) | (TODO: GitHub 링크) | 관심사 및 구독 |
-| (TODO: 팀원 3) | (TODO: GitHub 링크) | 뉴스 기사 및 뉴스 수집 |
-| (TODO: 팀원 4) | (TODO: GitHub 링크) | 댓글 및 좋아요 |
-| (TODO: 팀원 5) | (TODO: GitHub 링크) | 알림 및 기사 백업·복구 |
+| (이겸희) | ([TODO: GitHub 링크](https://github.com/LeeKyumhi)) | 사용자 및 사용자 활동 내역 |
+| (이대원) | ([TODO: GitHub 링크](https://github.com/Oneday04)) | 관심사 및 구독 |
+| (최주영) | ([TODO: GitHub 링크](https://github.com/ohkr1123-commits)) | 뉴스 기사 및 뉴스 수집 |
+| (최태민) | ([TODO: GitHub 링크](https://github.com/ctm0522)) | 댓글 및 좋아요 |
+| (김현수) | ([TODO: GitHub 링크](https://github.com/uhae451-wq)) | 알림 및 기사 백업·복구 |
 
 ## 프로젝트 소개
 
