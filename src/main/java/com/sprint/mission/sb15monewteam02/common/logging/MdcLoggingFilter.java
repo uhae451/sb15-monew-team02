@@ -18,54 +18,54 @@ import java.util.UUID;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class MdcLoggingFilter extends OncePerRequestFilter {
 
-    public static final String HEADER_REQUEST_ID = "X-Request-ID";
-    public static final String HEADER_CLIENT_IP = "X-Client-IP";
-    public static final String MDC_REQUEST_ID_KEY = "requestId";
-    public static final String MDC_CLIENT_IP_KEY = "clientIp";
+  public static final String HEADER_REQUEST_ID = "X-Request-ID";
+  public static final String HEADER_CLIENT_IP = "X-Client-IP";
+  public static final String MDC_REQUEST_ID_KEY = "requestId";
+  public static final String MDC_CLIENT_IP_KEY = "clientIp";
 
-    @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
-        String requestId = resolveRequestId(request);
-        String clientIp = resolveClientIp(request);
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      FilterChain filterChain
+  ) throws ServletException, IOException {
+    String requestId = resolveRequestId(request);
+    String clientIp = resolveClientIp(request);
 
-        MDC.put(MDC_REQUEST_ID_KEY, requestId);
-        MDC.put(MDC_CLIENT_IP_KEY, clientIp);
+    MDC.put(MDC_REQUEST_ID_KEY, requestId);
+    MDC.put(MDC_CLIENT_IP_KEY, clientIp);
 
-        response.setHeader(HEADER_REQUEST_ID, requestId);
-        response.setHeader(HEADER_CLIENT_IP, clientIp);
+    response.setHeader(HEADER_REQUEST_ID, requestId);
+    response.setHeader(HEADER_CLIENT_IP, clientIp);
 
-        try {
-            filterChain.doFilter(request, response);
-        } finally {
-            MDC.clear();
-        }
+    try {
+      filterChain.doFilter(request, response);
+    } finally {
+      MDC.clear();
     }
+  }
 
-    private String resolveRequestId(HttpServletRequest request) {
-        String header = request.getHeader(HEADER_REQUEST_ID);
-        return StringUtils.hasText(header) ? header.trim() : UUID.randomUUID().toString();
-    }
+  private String resolveRequestId(HttpServletRequest request) {
+    String header = request.getHeader(HEADER_REQUEST_ID);
+    return StringUtils.hasText(header) ? header.trim() : UUID.randomUUID().toString();
+  }
 
-    private String resolveClientIp(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (isValidIpHeader(forwardedFor)) {
-            String firstIp = forwardedFor.split(",")[0].trim();
-            if (isValidIpHeader(firstIp)) {
-                return firstIp;
-            }
-        }
-        String realIp = request.getHeader("X-Real-IP");
-        if (isValidIpHeader(realIp)) {
-            return realIp.trim();
-        }
-        return request.getRemoteAddr();
+  private String resolveClientIp(HttpServletRequest request) {
+    String forwardedFor = request.getHeader("X-Forwarded-For");
+    if (isValidIpHeader(forwardedFor)) {
+      String firstIp = forwardedFor.split(",")[0].trim();
+      if (isValidIpHeader(firstIp)) {
+        return firstIp;
+      }
     }
+    String realIp = request.getHeader("X-Real-IP");
+    if (isValidIpHeader(realIp)) {
+      return realIp.trim();
+    }
+    return request.getRemoteAddr();
+  }
 
-    private boolean isValidIpHeader(String value) {
-        return StringUtils.hasText(value) && !"unknown".equalsIgnoreCase(value.trim());
-    }
+  private boolean isValidIpHeader(String value) {
+    return StringUtils.hasText(value) && !"unknown".equalsIgnoreCase(value.trim());
+  }
 }

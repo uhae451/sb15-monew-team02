@@ -16,35 +16,35 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class SpringCommentEventPublisher implements CommentEventPublisher {
 
-    private final ApplicationEventPublisher applicationEventPublisher;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
-    @Override
-    public void publishCommentCreated(CommentCreatedEvent event) {
-        applicationEventPublisher.publishEvent(event);
-    }
+  @Override
+  public void publishCommentCreated(CommentCreatedEvent event) {
+    applicationEventPublisher.publishEvent(event);
+  }
 
-    @Override
-    public void publishCommentUpdated(CommentUpdatedEvent event) {
-        applicationEventPublisher.publishEvent(event);
-    }
+  @Override
+  public void publishCommentUpdated(CommentUpdatedEvent event) {
+    applicationEventPublisher.publishEvent(event);
+  }
 
-    @Override
-    public void publishCommentDeleted(CommentDeletedEvent event) {
-        applicationEventPublisher.publishEvent(event);
-    }
+  @Override
+  public void publishCommentDeleted(CommentDeletedEvent event) {
+    applicationEventPublisher.publishEvent(event);
+  }
 
-    @Override
-    public void publishCommentHardDeleted(CommentHardDeletedEvent event) {
-        applicationEventPublisher.publishEvent(event);
-    }
+  @Override
+  public void publishCommentHardDeleted(CommentHardDeletedEvent event) {
+    applicationEventPublisher.publishEvent(event);
+  }
 
-    @Override
-    public void publishCommentLiked(CommentLikedEvent event) {
-        applicationEventPublisher.publishEvent(event);
-    }
+  @Override
+  public void publishCommentLiked(CommentLikedEvent event) {
+    applicationEventPublisher.publishEvent(event);
+  }
 
-    @Override
-    public void publishCommentUnliked(CommentUnlikedEvent event) {
-        applicationEventPublisher.publishEvent(event);
-    }
+  @Override
+  public void publishCommentUnliked(CommentUnlikedEvent event) {
+    applicationEventPublisher.publishEvent(event);
+  }
 }

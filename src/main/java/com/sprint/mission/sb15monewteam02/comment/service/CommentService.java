@@ -46,264 +46,265 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CommentService {
 
-    private static final int DEFAULT_PAGE_LIMIT = 50;
-    private static final String UNKNOWN_NICKNAME = "알 수 없음";
+  private static final int DEFAULT_PAGE_LIMIT = 50;
+  private static final String UNKNOWN_NICKNAME = "알 수 없음";
 
-    private final CommentRepository commentRepository;
-    private final CommentLikeRepository commentLikeRepository;
-    private final UserReader userReader;
-    private final ArticleReader articleReader;
-    private final CommentEventPublisher eventPublisher;
-    private final CommentMapper commentMapper;
+  private final CommentRepository commentRepository;
+  private final CommentLikeRepository commentLikeRepository;
+  private final UserReader userReader;
+  private final ArticleReader articleReader;
+  private final CommentEventPublisher eventPublisher;
+  private final CommentMapper commentMapper;
 
-    @Transactional
-    public CommentResponse createComment(CreateCommentRequest request) {
-        articleReader.findActiveArticle(request.articleId())
-                .orElseThrow(() -> new ArticleNotFoundException(request.articleId()));
-        UserSummary user = userReader.findActiveUser(request.userId())
-                .orElseThrow(() -> new UserNotFoundException(request.userId()));
+  @Transactional
+  public CommentResponse createComment(CreateCommentRequest request) {
+    articleReader.findActiveArticle(request.articleId())
+        .orElseThrow(() -> new ArticleNotFoundException());
+    UserSummary user = userReader.findActiveUser(request.userId())
+        .orElseThrow(() -> new UserNotFoundException());
 
-        Comment saved = commentRepository.save(
-                Comment.create(request.articleId(), request.userId(), request.content().trim())
-        );
+    Comment saved = commentRepository.save(
+        Comment.create(request.articleId(), request.userId(), request.content().trim())
+    );
 
-        eventPublisher.publishCommentCreated(new CommentCreatedEvent(
-                saved.getId(),
-                saved.getArticleId(),
-                saved.getUserId(),
-                user.nickname(),
-                saved.getContent(),
-                saved.getCreatedAt()
-        ));
+    eventPublisher.publishCommentCreated(new CommentCreatedEvent(
+        saved.getId(),
+        saved.getArticleId(),
+        saved.getUserId(),
+        user.nickname(),
+        saved.getContent(),
+        saved.getCreatedAt()
+    ));
 
-        log.info("Comment created: commentId={}, articleId={}, userId={}",
-                saved.getId(), saved.getArticleId(), saved.getUserId());
-        return commentMapper.toResponse(saved, user.nickname(), false);
+    log.info("Comment created: commentId={}, articleId={}, userId={}",
+        saved.getId(), saved.getArticleId(), saved.getUserId());
+    return commentMapper.toResponse(saved, user.nickname(), false);
+  }
+
+  @Transactional(readOnly = true)
+  public CursorPageResponse<CommentResponse> getComments(CommentSearchCondition condition, UUID requestUserId) {
+    articleReader.findActiveArticle(condition.articleId())
+        .orElseThrow(() -> new ArticleNotFoundException());
+
+    CommentOrderBy orderBy = condition.orderBy() != null ? condition.orderBy() : CommentOrderBy.CREATED_AT;
+    SortDirection direction = condition.direction() != null ? condition.direction() : SortDirection.DESC;
+    int limit = condition.limit() > 0 ? condition.limit() : DEFAULT_PAGE_LIMIT;
+
+    List<Comment> fetched = commentRepository.findByCursor(
+        condition.articleId(),
+        orderBy,
+        direction,
+        condition.cursor(),
+        condition.after(),
+        limit
+    );
+
+    boolean hasNext = fetched.size() > limit;
+    List<Comment> pageComments = hasNext ? fetched.subList(0, limit) : fetched;
+    long totalElements = commentRepository.countByArticleIdAndDeletedFalse(condition.articleId());
+
+    List<CommentResponse> content = mapToResponses(pageComments, requestUserId);
+    CursorTokens cursorTokens = extractCursorTokens(pageComments, orderBy, hasNext);
+
+    return new CursorPageResponse<>(
+        content,
+        cursorTokens.nextCursor(),
+        cursorTokens.nextAfter(),
+        content.size(),
+        totalElements,
+        hasNext
+    );
+  }
+
+  @Transactional
+  public CommentResponse updateComment(UUID commentId, UUID requestUserId, UpdateCommentRequest request) {
+    Comment comment = findActiveComment(commentId);
+    validateAuthor(comment, requestUserId);
+
+    comment.updateContent(request.content().trim());
+
+    eventPublisher.publishCommentUpdated(new CommentUpdatedEvent(
+        comment.getId(),
+        comment.getArticleId(),
+        comment.getUserId(),
+        comment.getContent(),
+        comment.getUpdatedAt()
+    ));
+
+    String nickname = resolveNickname(comment.getUserId());
+    boolean likedByMe = commentLikeRepository.existsByCommentIdAndUserId(commentId, requestUserId);
+
+    log.info("Comment updated: commentId={}, userId={}", commentId, requestUserId);
+    return commentMapper.toResponse(comment, nickname, likedByMe);
+  }
+
+  @Transactional
+  public void softDeleteComment(UUID commentId, UUID requestUserId) {
+    Comment comment = findActiveComment(commentId);
+    if (requestUserId != null) {
+      validateAuthor(comment, requestUserId);
     }
 
-    @Transactional(readOnly = true)
-    public CursorPageResponse<CommentResponse> getComments(CommentSearchCondition condition, UUID requestUserId) {
-        articleReader.findActiveArticle(condition.articleId())
-                .orElseThrow(() -> new ArticleNotFoundException(condition.articleId()));
+    comment.softDelete();
 
-        CommentOrderBy orderBy = condition.orderBy() != null ? condition.orderBy() : CommentOrderBy.CREATED_AT;
-        SortDirection direction = condition.direction() != null ? condition.direction() : SortDirection.DESC;
-        int limit = condition.limit() > 0 ? condition.limit() : DEFAULT_PAGE_LIMIT;
+    eventPublisher.publishCommentDeleted(new CommentDeletedEvent(
+        comment.getId(),
+        comment.getArticleId(),
+        comment.getUserId(),
+        comment.getDeletedAt()
+    ));
+    log.info("Comment soft-deleted: commentId={}", commentId);
+  }
 
-        List<Comment> fetched = commentRepository.findByCursor(
-                condition.articleId(),
-                orderBy,
-                direction,
-                condition.cursor(),
-                condition.after(),
-                limit
-        );
+  @Transactional
+  public void hardDeleteComment(UUID commentId) {
+    Comment comment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new CommentNotFoundException());
 
-        boolean hasNext = fetched.size() > limit;
-        List<Comment> pageComments = hasNext ? fetched.subList(0, limit) : fetched;
-        long totalElements = commentRepository.countByArticleIdAndDeletedFalse(condition.articleId());
+    int removedLikes = commentLikeRepository.deleteAllByCommentId(commentId);
+    commentRepository.delete(comment);
 
-        List<CommentResponse> content = mapToResponses(pageComments, requestUserId);
-        CursorTokens cursorTokens = extractCursorTokens(pageComments, orderBy, hasNext);
+    eventPublisher.publishCommentHardDeleted(new CommentHardDeletedEvent(
+        comment.getId(),
+        comment.getArticleId(),
+        comment.getUserId()
+    ));
+    log.info("Comment hard-deleted: commentId={}, removedLikes={}", commentId, removedLikes);
+  }
 
-        return CursorPageResponse.of(
-                content,
-                cursorTokens.nextCursor(),
-                cursorTokens.nextAfter(),
-                totalElements,
-                hasNext
-        );
+  @Transactional
+  public CommentLikeResponse likeComment(UUID commentId, UUID requestUserId) {
+    userReader.findActiveUser(requestUserId)
+        .orElseThrow(() -> new UserNotFoundException());
+    Comment comment = findActiveComment(commentId);
+
+    if (commentLikeRepository.existsByCommentIdAndUserId(commentId, requestUserId)) {
+      throw new DuplicateCommentLikeException();
     }
 
-    @Transactional
-    public CommentResponse updateComment(UUID commentId, UUID requestUserId, UpdateCommentRequest request) {
-        Comment comment = findActiveComment(commentId);
-        validateAuthor(comment, requestUserId);
+    CommentLike savedLike = persistCommentLike(comment, requestUserId);
 
-        comment.updateContent(request.content().trim());
-
-        eventPublisher.publishCommentUpdated(new CommentUpdatedEvent(
-                comment.getId(),
-                comment.getArticleId(),
-                comment.getUserId(),
-                comment.getContent(),
-                comment.getUpdatedAt()
-        ));
-
-        String nickname = resolveNickname(comment.getUserId());
-        boolean likedByMe = commentLikeRepository.existsByCommentIdAndUserId(commentId, requestUserId);
-
-        log.info("Comment updated: commentId={}, userId={}", commentId, requestUserId);
-        return commentMapper.toResponse(comment, nickname, likedByMe);
+    int updatedRows = commentRepository.incrementLikeCount(commentId);
+    if (updatedRows == 0) {
+      throw new CommentNotFoundException();
     }
 
-    @Transactional
-    public void softDeleteComment(UUID commentId, UUID requestUserId) {
-        Comment comment = findActiveComment(commentId);
-        if (requestUserId != null) {
-            validateAuthor(comment, requestUserId);
-        }
+    Comment refreshedComment = commentRepository.findByIdAndDeletedFalse(commentId)
+        .orElse(comment);
 
-        comment.softDelete();
+    String articleTitle = articleReader.findActiveArticle(refreshedComment.getArticleId())
+        .map(ArticleSummary::title)
+        .orElse("");
+    String commentUserNickname = resolveNickname(refreshedComment.getUserId());
 
-        eventPublisher.publishCommentDeleted(new CommentDeletedEvent(
-                comment.getId(),
-                comment.getArticleId(),
-                comment.getUserId(),
-                comment.getDeletedAt()
-        ));
-        log.info("Comment soft-deleted: commentId={}", commentId);
+    eventPublisher.publishCommentLiked(new CommentLikedEvent(
+        savedLike.getId(),
+        refreshedComment.getId(),
+        refreshedComment.getArticleId(),
+        articleTitle,
+        requestUserId,
+        refreshedComment.getUserId(),
+        commentUserNickname,
+        refreshedComment.getContent(),
+        refreshedComment.getLikeCount(),
+        refreshedComment.getCreatedAt(),
+        savedLike.getCreatedAt()
+    ));
+
+    log.info("Comment liked: commentId={}, userId={}, likeCount={}",
+        commentId, requestUserId, refreshedComment.getLikeCount());
+
+    return commentMapper.toLikeResponse(
+        savedLike,
+        refreshedComment,
+        articleTitle,
+        commentUserNickname,
+        refreshedComment.getLikeCount()
+    );
+  }
+
+  @Transactional
+  public void unlikeComment(UUID commentId, UUID requestUserId) {
+    findActiveComment(commentId);
+
+    int deletedRows = commentLikeRepository.deleteByCommentIdAndUserId(commentId, requestUserId);
+    if (deletedRows == 0) {
+      throw new CommentLikeNotFoundException();
     }
 
-    @Transactional
-    public void hardDeleteComment(UUID commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException(commentId));
+    commentRepository.decrementLikeCount(commentId);
+    eventPublisher.publishCommentUnliked(new CommentUnlikedEvent(commentId, requestUserId));
+    log.info("Comment unliked: commentId={}, userId={}", commentId, requestUserId);
+  }
 
-        int removedLikes = commentLikeRepository.deleteAllByCommentId(commentId);
-        commentRepository.delete(comment);
+  private Comment findActiveComment(UUID commentId) {
+    return commentRepository.findByIdAndDeletedFalse(commentId)
+        .orElseThrow(() -> new CommentNotFoundException());
+  }
 
-        eventPublisher.publishCommentHardDeleted(new CommentHardDeletedEvent(
-                comment.getId(),
-                comment.getArticleId(),
-                comment.getUserId()
-        ));
-        log.info("Comment hard-deleted: commentId={}, removedLikes={}", commentId, removedLikes);
+  private void validateAuthor(Comment comment, UUID requestUserId) {
+    if (!comment.getUserId().equals(requestUserId)) {
+      throw new CommentForbiddenException();
     }
+  }
 
-    @Transactional
-    public CommentLikeResponse likeComment(UUID commentId, UUID requestUserId) {
-        userReader.findActiveUser(requestUserId)
-                .orElseThrow(() -> new UserNotFoundException(requestUserId));
-        Comment comment = findActiveComment(commentId);
-
-        if (commentLikeRepository.existsByCommentIdAndUserId(commentId, requestUserId)) {
-            throw new DuplicateCommentLikeException();
-        }
-
-        CommentLike savedLike = persistCommentLike(comment, requestUserId);
-
-        int updatedRows = commentRepository.incrementLikeCount(commentId);
-        if (updatedRows == 0) {
-            throw new CommentNotFoundException(commentId);
-        }
-
-        Comment refreshedComment = commentRepository.findByIdAndDeletedFalse(commentId)
-                .orElse(comment);
-
-        String articleTitle = articleReader.findActiveArticle(refreshedComment.getArticleId())
-                .map(ArticleSummary::title)
-                .orElse("");
-        String commentUserNickname = resolveNickname(refreshedComment.getUserId());
-
-        eventPublisher.publishCommentLiked(new CommentLikedEvent(
-                savedLike.getId(),
-                refreshedComment.getId(),
-                refreshedComment.getArticleId(),
-                articleTitle,
-                requestUserId,
-                refreshedComment.getUserId(),
-                commentUserNickname,
-                refreshedComment.getContent(),
-                refreshedComment.getLikeCount(),
-                refreshedComment.getCreatedAt(),
-                savedLike.getCreatedAt()
-        ));
-
-        log.info("Comment liked: commentId={}, userId={}, likeCount={}",
-                commentId, requestUserId, refreshedComment.getLikeCount());
-
-        return commentMapper.toLikeResponse(
-                savedLike,
-                refreshedComment,
-                articleTitle,
-                commentUserNickname,
-                refreshedComment.getLikeCount()
-        );
+  private CommentLike persistCommentLike(Comment comment, UUID requestUserId) {
+    try {
+      return commentLikeRepository.saveAndFlush(CommentLike.create(comment, requestUserId));
+    } catch (DataIntegrityViolationException ex) {
+      throw new DuplicateCommentLikeException();
     }
+  }
 
-    @Transactional
-    public void unlikeComment(UUID commentId, UUID requestUserId) {
-        findActiveComment(commentId);
-
-        int deletedRows = commentLikeRepository.deleteByCommentIdAndUserId(commentId, requestUserId);
-        if (deletedRows == 0) {
-            throw new CommentLikeNotFoundException();
-        }
-
-        commentRepository.decrementLikeCount(commentId);
-        eventPublisher.publishCommentUnliked(new CommentUnlikedEvent(commentId, requestUserId));
-        log.info("Comment unliked: commentId={}, userId={}", commentId, requestUserId);
+  private List<CommentResponse> mapToResponses(List<Comment> pageComments, UUID requestUserId) {
+    if (pageComments.isEmpty()) {
+      return List.of();
     }
+    Set<UUID> likedCommentIds = resolveLikedCommentIds(pageComments, requestUserId);
+    Map<UUID, UserSummary> usersById = resolveUsers(pageComments);
 
-    private Comment findActiveComment(UUID commentId) {
-        return commentRepository.findByIdAndDeletedFalse(commentId)
-                .orElseThrow(() -> new CommentNotFoundException(commentId));
+    return pageComments.stream()
+        .map(comment -> {
+          String nickname = usersById.getOrDefault(
+              comment.getUserId(),
+              new UserSummary(comment.getUserId(), UNKNOWN_NICKNAME)
+          ).nickname();
+          return commentMapper.toResponse(comment, nickname, likedCommentIds.contains(comment.getId()));
+        })
+        .toList();
+  }
+
+  private CursorTokens extractCursorTokens(List<Comment> pageComments, CommentOrderBy orderBy, boolean hasNext) {
+    if (!hasNext || pageComments.isEmpty()) {
+      return new CursorTokens(null, null);
     }
+    Comment last = pageComments.get(pageComments.size() - 1);
+    String nextCursor = orderBy == CommentOrderBy.LIKE_COUNT
+        ? String.valueOf(last.getLikeCount())
+        : last.getCreatedAt().toString();
+    String nextAfter = last.getCreatedAt().toString();
+    return new CursorTokens(nextCursor, nextAfter);
+  }
 
-    private void validateAuthor(Comment comment, UUID requestUserId) {
-        if (!comment.getUserId().equals(requestUserId)) {
-            throw new CommentForbiddenException();
-        }
+  private Set<UUID> resolveLikedCommentIds(List<Comment> pageComments, UUID requestUserId) {
+    if (requestUserId == null || pageComments.isEmpty()) {
+      return Set.of();
     }
+    List<UUID> commentIds = pageComments.stream().map(Comment::getId).toList();
+    return commentLikeRepository.findLikedCommentIds(commentIds, requestUserId);
+  }
 
-    private CommentLike persistCommentLike(Comment comment, UUID requestUserId) {
-        try {
-            return commentLikeRepository.saveAndFlush(CommentLike.create(comment, requestUserId));
-        } catch (DataIntegrityViolationException ex) {
-            throw new DuplicateCommentLikeException();
-        }
-    }
+  private Map<UUID, UserSummary> resolveUsers(List<Comment> pageComments) {
+    List<UUID> userIds = pageComments.stream().map(Comment::getUserId).distinct().toList();
+    return userReader.findUsersByIds(userIds);
+  }
 
-    private List<CommentResponse> mapToResponses(List<Comment> pageComments, UUID requestUserId) {
-        if (pageComments.isEmpty()) {
-            return List.of();
-        }
-        Set<UUID> likedCommentIds = resolveLikedCommentIds(pageComments, requestUserId);
-        Map<UUID, UserSummary> usersById = resolveUsers(pageComments);
+  private String resolveNickname(UUID userId) {
+    return userReader.findActiveUser(userId)
+        .map(UserSummary::nickname)
+        .orElse(UNKNOWN_NICKNAME);
+  }
 
-        return pageComments.stream()
-                .map(comment -> {
-                    String nickname = usersById.getOrDefault(
-                            comment.getUserId(),
-                            new UserSummary(comment.getUserId(), UNKNOWN_NICKNAME)
-                    ).nickname();
-                    return commentMapper.toResponse(comment, nickname, likedCommentIds.contains(comment.getId()));
-                })
-                .toList();
-    }
-
-    private CursorTokens extractCursorTokens(List<Comment> pageComments, CommentOrderBy orderBy, boolean hasNext) {
-        if (!hasNext || pageComments.isEmpty()) {
-            return new CursorTokens(null, null);
-        }
-        Comment last = pageComments.get(pageComments.size() - 1);
-        String nextCursor = orderBy == CommentOrderBy.LIKE_COUNT
-                ? String.valueOf(last.getLikeCount())
-                : last.getCreatedAt().toString();
-        String nextAfter = last.getCreatedAt().toString();
-        return new CursorTokens(nextCursor, nextAfter);
-    }
-
-    private Set<UUID> resolveLikedCommentIds(List<Comment> pageComments, UUID requestUserId) {
-        if (requestUserId == null || pageComments.isEmpty()) {
-            return Set.of();
-        }
-        List<UUID> commentIds = pageComments.stream().map(Comment::getId).toList();
-        return commentLikeRepository.findLikedCommentIds(commentIds, requestUserId);
-    }
-
-    private Map<UUID, UserSummary> resolveUsers(List<Comment> pageComments) {
-        List<UUID> userIds = pageComments.stream().map(Comment::getUserId).distinct().toList();
-        return userReader.findUsersByIds(userIds);
-    }
-
-    private String resolveNickname(UUID userId) {
-        return userReader.findActiveUser(userId)
-                .map(UserSummary::nickname)
-                .orElse(UNKNOWN_NICKNAME);
-    }
-
-    private record CursorTokens(String nextCursor, String nextAfter) {
-    }
+  private record CursorTokens(String nextCursor, String nextAfter) {
+  }
 }

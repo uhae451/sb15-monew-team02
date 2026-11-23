@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class CommentOrderByConverter implements Converter<String, CommentOrderBy> {
 
-    @Override
-    public CommentOrderBy convert(String source) {
-        return CommentOrderBy.from(source);
-    }
+  @Override
+  public CommentOrderBy convert(String source) {
+    return CommentOrderBy.from(source);
+  }
 }

@@ -12,23 +12,20 @@ import java.util.Arrays;
 @Getter
 @RequiredArgsConstructor
 public enum CommentOrderBy {
-    CREATED_AT("createdAt"),
-    LIKE_COUNT("likeCount");
+  CREATED_AT("createdAt"),
+  LIKE_COUNT("likeCount");
 
-    @JsonValue
-    private final String value;
+  @JsonValue
+  private final String value;
 
-    @JsonCreator
-    public static CommentOrderBy from(String value) {
-        if (value == null || value.isBlank()) {
-            return CREATED_AT;
-        }
-        return Arrays.stream(values())
-                .filter(orderBy -> orderBy.value.equalsIgnoreCase(value) || orderBy.name().equalsIgnoreCase(value))
-                .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.INVALID_TYPE_VALUE,
-                        "지원하지 않는 정렬 기준입니다: " + value
-                ));
+  @JsonCreator
+  public static CommentOrderBy from(String value) {
+    if (value == null || value.isBlank()) {
+      return CREATED_AT;
     }
+    return Arrays.stream(values())
+        .filter(orderBy -> orderBy.value.equalsIgnoreCase(value) || orderBy.name().equalsIgnoreCase(value))
+        .findFirst()
+        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TYPE_VALUE));
+  }
 }

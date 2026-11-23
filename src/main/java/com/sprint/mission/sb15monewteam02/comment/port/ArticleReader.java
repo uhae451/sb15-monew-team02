@@ -5,5 +5,5 @@ import java.util.UUID;
 
 public interface ArticleReader {
 
-    Optional<ArticleSummary> findActiveArticle(UUID articleId);
+  Optional<ArticleSummary> findActiveArticle(UUID articleId);
 }

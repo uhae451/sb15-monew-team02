@@ -9,12 +9,12 @@ import java.util.UUID;
 
 public interface CommentRepositoryCustom {
 
-    List<Comment> findByCursor(
-            UUID articleId,
-            CommentOrderBy orderBy,
-            SortDirection direction,
-            String cursor,
-            String after,
-            int limit
-    );
+  List<Comment> findByCursor(
+      UUID articleId,
+      CommentOrderBy orderBy,
+      SortDirection direction,
+      String cursor,
+      String after,
+      int limit
+  );
 }

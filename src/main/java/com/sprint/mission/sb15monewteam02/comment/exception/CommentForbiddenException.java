@@ -5,7 +5,7 @@ import com.sprint.mission.sb15monewteam02.common.exception.ErrorCode;
 
 public class CommentForbiddenException extends BusinessException {
 
-    public CommentForbiddenException() {
-        super(ErrorCode.COMMENT_FORBIDDEN);
-    }
+  public CommentForbiddenException() {
+    super(ErrorCode.COMMENT_FORBIDDEN);
+  }
 }

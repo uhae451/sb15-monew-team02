@@ -9,15 +9,15 @@ import com.sprint.mission.sb15monewteam02.comment.event.CommentUpdatedEvent;
 
 public interface CommentEventPublisher {
 
-    void publishCommentCreated(CommentCreatedEvent event);
+  void publishCommentCreated(CommentCreatedEvent event);
 
-    void publishCommentUpdated(CommentUpdatedEvent event);
+  void publishCommentUpdated(CommentUpdatedEvent event);
 
-    void publishCommentDeleted(CommentDeletedEvent event);
+  void publishCommentDeleted(CommentDeletedEvent event);
 
-    void publishCommentHardDeleted(CommentHardDeletedEvent event);
+  void publishCommentHardDeleted(CommentHardDeletedEvent event);
 
-    void publishCommentLiked(CommentLikedEvent event);
+  void publishCommentLiked(CommentLikedEvent event);
 
-    void publishCommentUnliked(CommentUnlikedEvent event);
+  void publishCommentUnliked(CommentUnlikedEvent event);
 }

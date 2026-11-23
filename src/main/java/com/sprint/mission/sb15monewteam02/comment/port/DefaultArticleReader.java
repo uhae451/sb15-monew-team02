@@ -10,11 +10,11 @@ import java.util.UUID;
 @Fallback
 public class DefaultArticleReader implements ArticleReader {
 
-    @Override
-    public Optional<ArticleSummary> findActiveArticle(UUID articleId) {
-        if (articleId == null) {
-            return Optional.empty();
-        }
-        return Optional.of(new ArticleSummary(articleId, "Article " + articleId.toString().substring(0, 8)));
+  @Override
+  public Optional<ArticleSummary> findActiveArticle(UUID articleId) {
+    if (articleId == null) {
+      return Optional.empty();
     }
+    return Optional.of(new ArticleSummary(articleId, "Article " + articleId.toString().substring(0, 8)));
+  }
 }

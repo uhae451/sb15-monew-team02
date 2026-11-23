@@ -9,38 +9,38 @@ import org.springframework.stereotype.Component;
 @Component
 public class CommentMapper {
 
-    public CommentResponse toResponse(Comment comment, String userNickname, boolean likedByMe) {
-        return new CommentResponse(
-                comment.getId(),
-                comment.getArticleId(),
-                comment.getUserId(),
-                userNickname,
-                comment.getContent(),
-                comment.getLikeCount(),
-                likedByMe,
-                comment.getCreatedAt()
-        );
-    }
+  public CommentResponse toResponse(Comment comment, String userNickname, boolean likedByMe) {
+    return new CommentResponse(
+        comment.getId(),
+        comment.getArticleId(),
+        comment.getUserId(),
+        userNickname,
+        comment.getContent(),
+        comment.getLikeCount(),
+        likedByMe,
+        comment.getCreatedAt()
+    );
+  }
 
-    public CommentLikeResponse toLikeResponse(
-            CommentLike commentLike,
-            Comment comment,
-            String articleTitle,
-            String commentUserNickname,
-            long commentLikeCount
-    ) {
-        return new CommentLikeResponse(
-                commentLike.getId(),
-                commentLike.getUserId(),
-                commentLike.getCreatedAt(),
-                comment.getId(),
-                comment.getArticleId(),
-                articleTitle,
-                comment.getUserId(),
-                commentUserNickname,
-                comment.getContent(),
-                commentLikeCount,
-                comment.getCreatedAt()
-        );
-    }
+  public CommentLikeResponse toLikeResponse(
+      CommentLike commentLike,
+      Comment comment,
+      String articleTitle,
+      String commentUserNickname,
+      long commentLikeCount
+  ) {
+    return new CommentLikeResponse(
+        commentLike.getId(),
+        commentLike.getUserId(),
+        commentLike.getCreatedAt(),
+        comment.getId(),
+        comment.getArticleId(),
+        articleTitle,
+        comment.getUserId(),
+        commentUserNickname,
+        comment.getContent(),
+        commentLikeCount,
+        comment.getCreatedAt()
+    );
+  }
 }

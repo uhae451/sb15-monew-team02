@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface UserReader {
 
-    Optional<UserSummary> findActiveUser(UUID userId);
+  Optional<UserSummary> findActiveUser(UUID userId);
 
-    Map<UUID, UserSummary> findUsersByIds(Collection<UUID> userIds);
+  Map<UUID, UserSummary> findUsersByIds(Collection<UUID> userIds);
 }

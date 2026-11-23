@@ -12,23 +12,23 @@ import java.util.UUID;
 
 public interface CommentRepository extends JpaRepository<Comment, UUID>, CommentRepositoryCustom {
 
-    Optional<Comment> findByIdAndDeletedFalse(UUID id);
+  Optional<Comment> findByIdAndDeletedFalse(UUID id);
 
-    long countByArticleIdAndDeletedFalse(UUID articleId);
+  long countByArticleIdAndDeletedFalse(UUID articleId);
 
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("UPDATE Comment c SET c.likeCount = c.likeCount + 1, c.updatedAt = :now WHERE c.id = :commentId AND c.deleted = false")
-    int incrementLikeCount(@Param("commentId") UUID commentId, @Param("now") Instant now);
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("UPDATE Comment c SET c.likeCount = c.likeCount + 1, c.updatedAt = :now WHERE c.id = :commentId AND c.deleted = false")
+  int incrementLikeCount(@Param("commentId") UUID commentId, @Param("now") Instant now);
 
-    default int incrementLikeCount(UUID commentId) {
-        return incrementLikeCount(commentId, Instant.now());
-    }
+  default int incrementLikeCount(UUID commentId) {
+    return incrementLikeCount(commentId, Instant.now());
+  }
 
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("UPDATE Comment c SET c.likeCount = CASE WHEN c.likeCount > 0 THEN c.likeCount - 1 ELSE 0 END, c.updatedAt = :now WHERE c.id = :commentId AND c.deleted = false")
-    int decrementLikeCount(@Param("commentId") UUID commentId, @Param("now") Instant now);
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("UPDATE Comment c SET c.likeCount = CASE WHEN c.likeCount > 0 THEN c.likeCount - 1 ELSE 0 END, c.updatedAt = :now WHERE c.id = :commentId AND c.deleted = false")
+  int decrementLikeCount(@Param("commentId") UUID commentId, @Param("now") Instant now);
 
-    default int decrementLikeCount(UUID commentId) {
-        return decrementLikeCount(commentId, Instant.now());
-    }
+  default int decrementLikeCount(UUID commentId) {
+    return decrementLikeCount(commentId, Instant.now());
+  }
 }
