@@ -373,4 +373,49 @@ class CommentServiceTest {
         assertThatThrownBy(() -> commentService.hardDeleteComment(commentId))
                 .isInstanceOf(CommentNotFoundException.class);
     }
+
+    @Test
+    @DisplayName("createdAt 정렬 시 nextCursor와 nextAfter는 마지막 댓글의 createdAt으로 설정된다")
+    void getCommentsByCreatedAtSetsCreatedAtCursor() {
+        UUID articleId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        Instant t1 = Instant.parse("2026-11-23T10:00:00Z");
+        Instant t2 = Instant.parse("2026-11-23T10:01:00Z");
+
+        Comment c1 = Comment.createWithMetrics(articleId, userId, "1", 0L, t1);
+        ReflectionTestUtils.setField(c1, "id", UUID.randomUUID());
+        Comment c2 = Comment.createWithMetrics(articleId, userId, "2", 0L, t2);
+        ReflectionTestUtils.setField(c2, "id", UUID.randomUUID());
+
+        given(articleReader.findActiveArticle(articleId))
+                .willReturn(Optional.of(new ArticleSummary(articleId, "기사")));
+        given(commentRepository.findByCursor(articleId, CommentOrderBy.CREATED_AT, SortDirection.ASC, null, null, 1))
+                .willReturn(List.of(c1, c2));
+        given(commentRepository.countByArticleIdAndDeletedFalse(articleId)).willReturn(2L);
+        given(userReader.findUsersByIds(any())).willReturn(Map.of(userId, new UserSummary(userId, "작성자")));
+
+        CursorPageResponse<CommentResponse> page = commentService.getComments(
+                new CommentSearchCondition(articleId, CommentOrderBy.CREATED_AT, SortDirection.ASC, null, null, 1),
+                null
+        );
+
+        assertThat(page.hasNext()).isTrue();
+        assertThat(page.nextCursor()).isEqualTo(t1.toString());
+        assertThat(page.nextAfter()).isEqualTo(t1.toString());
+    }
+
+    @Test
+    @DisplayName("타인이 댓글 논리 삭제를 시도하면 CommentForbiddenException이 발생한다")
+    void softDeleteByNonAuthorThrowsForbidden() {
+        UUID commentId = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        Comment comment = Comment.createWithMetrics(UUID.randomUUID(), authorId, "댓글", 0L, Instant.now());
+        ReflectionTestUtils.setField(comment, "id", commentId);
+
+        given(commentRepository.findByIdAndDeletedFalse(commentId)).willReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.softDeleteComment(commentId, otherUserId))
+                .isInstanceOf(CommentForbiddenException.class);
+    }
 }
