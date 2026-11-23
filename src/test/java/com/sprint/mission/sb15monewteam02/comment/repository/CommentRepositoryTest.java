@@ -3,6 +3,8 @@ package com.sprint.mission.sb15monewteam02.comment.repository;
 import com.sprint.mission.sb15monewteam02.comment.entity.Comment;
 import com.sprint.mission.sb15monewteam02.comment.entity.CommentLike;
 import com.sprint.mission.sb15monewteam02.comment.entity.CommentOrderBy;
+import com.sprint.mission.sb15monewteam02.comment.exception.InvalidCursorException;
+import com.sprint.mission.sb15monewteam02.common.exception.BusinessException;
 import com.sprint.mission.sb15monewteam02.common.dto.SortDirection;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -214,5 +216,29 @@ class CommentRepositoryTest {
 
         Set<UUID> likedIds = commentLikeRepository.findLikedCommentIds(List.of(c1.getId(), c2.getId()), viewerId);
         assertThat(likedIds).containsExactly(c1.getId());
+    }
+
+    @Test
+    @DisplayName("잘못된 커서 형식이 전달되면 InvalidCursorException이 발생한다")
+    void invalidCursorThrowsException() {
+        UUID articleId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> commentRepository.findByCursor(
+                articleId, CommentOrderBy.CREATED_AT, SortDirection.DESC, "not-an-instant", null, 5
+        )).isInstanceOf(InvalidCursorException.class);
+
+        assertThatThrownBy(() -> commentRepository.findByCursor(
+                articleId, CommentOrderBy.LIKE_COUNT, SortDirection.DESC, "not-a-number", null, 5
+        )).isInstanceOf(InvalidCursorException.class);
+    }
+
+    @Test
+    @DisplayName("CommentOrderBy는 문자열 값을 대소문자 구분 없이 파싱하고 잘못된 값은 예외를 던진다")
+    void commentOrderByParsing() {
+        assertThat(CommentOrderBy.from(null)).isEqualTo(CommentOrderBy.CREATED_AT);
+        assertThat(CommentOrderBy.from("likeCount")).isEqualTo(CommentOrderBy.LIKE_COUNT);
+        assertThat(CommentOrderBy.from("CREATED_AT")).isEqualTo(CommentOrderBy.CREATED_AT);
+        assertThatThrownBy(() -> CommentOrderBy.from("invalid"))
+                .isInstanceOf(BusinessException.class);
     }
 }
