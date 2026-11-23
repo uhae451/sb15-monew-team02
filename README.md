@@ -276,6 +276,28 @@ backup/
 
 알림 정리 작업은 `notification` 내부의 `batch`, `scheduler`에서 관리합니다. 기사 복구 API는 `backup`에서 담당하고, 기사 저장 및 조회는 `article` 담당자와 합의한 인터페이스를 통해 연동합니다.
 
+## 공통 응답 사용법
+
+각 파트는 `frontend/src/api/해당영역/types.ts`의 응답 필드에 맞춰 DTO를 작성하고,
+`ResponseEntity`의 본문에 그대로 넣습니다. 제공 프론트는 응답 본문을 바로 읽으므로
+별도의 `data` 객체로 감싸지 않습니다.
+
+```java
+// 단건 DTO 또는 배열
+return ResponseEntity.ok(result);
+
+// 관심사·기사·댓글·알림 목록
+return ResponseEntity.ok(new CursorPageResponse<>(
+    content, nextCursor, nextAfter, size, totalElements, hasNext));
+```
+
+- 목록의 공통 필드는 `content`, `nextCursor`, `nextAfter`, `size`, `totalElements`, `hasNext`입니다.
+- `nextCursor`, `nextAfter`는 문자열 또는 null이며, 페이지 값의 계산은 각 담당자가 구현합니다.
+- HTTP 상태는 과제 명세에 맞춰 `ResponseEntity.status(status)`로 지정합니다.
+- 본문 없는 응답은 `ResponseEntity.status(status).build()`를 사용합니다.
+- 오류는 `ErrorResponse` 틀을 사용합니다. 프론트는 최상위 `message`를 읽으며,
+  오류 코드·메시지·HTTP 상태는 팀에서 정합니다.
+
 ## 구현 홈페이지
 
 - 서비스: (배포 링크)
