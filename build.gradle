@@ -75,6 +75,10 @@ tasks.named('jacocoTestCoverageVerification') {
     }
 }
 
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
 // Run `npm ci && npm run build` in frontend before synchronizing.
 tasks.register('syncFrontend', Sync) {
     group = 'frontend'
