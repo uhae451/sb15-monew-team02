@@ -52,13 +52,20 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
 
     private String resolveClientIp(HttpServletRequest request) {
         String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (StringUtils.hasText(forwardedFor)) {
-            return forwardedFor.split(",")[0].trim();
+        if (isValidIpHeader(forwardedFor)) {
+            String firstIp = forwardedFor.split(",")[0].trim();
+            if (isValidIpHeader(firstIp)) {
+                return firstIp;
+            }
         }
         String realIp = request.getHeader("X-Real-IP");
-        if (StringUtils.hasText(realIp)) {
+        if (isValidIpHeader(realIp)) {
             return realIp.trim();
         }
         return request.getRemoteAddr();
+    }
+
+    private boolean isValidIpHeader(String value) {
+        return StringUtils.hasText(value) && !"unknown".equalsIgnoreCase(value.trim());
     }
 }

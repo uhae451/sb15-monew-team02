@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -22,9 +23,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
         ErrorCode errorCode = ex.getErrorCode();
         log.warn("Business exception occurred: code={}, message={}", errorCode.getCode(), ex.getMessage());
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode, ex.getMessage(), currentRequestId()));
+        return buildResponse(errorCode, ex.getMessage(), List.of());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -41,9 +40,7 @@ public class GlobalExceptionHandler {
 
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         log.warn("Validation failed: {}", fieldErrors);
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode, errorCode.getMessage(), currentRequestId(), fieldErrors));
+        return buildResponse(errorCode, errorCode.getMessage(), fieldErrors);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -59,9 +56,14 @@ public class GlobalExceptionHandler {
 
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         log.warn("Constraint violation: {}", fieldErrors);
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode, errorCode.getMessage(), currentRequestId(), fieldErrors));
+        return buildResponse(errorCode, errorCode.getMessage(), fieldErrors);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+        log.warn("Unreadable HTTP message: {}", ex.getMessage());
+        return buildResponse(errorCode, "요청 본문 형식이 올바르지 않습니다.", List.of());
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
@@ -69,9 +71,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ErrorCode.MISSING_REQUEST_HEADER;
         String message = String.format("필수 요청 헤더(%s)가 누락되었습니다.", ex.getHeaderName());
         log.warn("Missing request header: {}", ex.getHeaderName());
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode, message, currentRequestId()));
+        return buildResponse(errorCode, message, List.of());
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -79,9 +79,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ErrorCode.MISSING_REQUEST_PARAMETER;
         String message = String.format("필수 요청 파라미터(%s)가 누락되었습니다.", ex.getParameterName());
         log.warn("Missing request parameter: {}", ex.getParameterName());
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode, message, currentRequestId()));
+        return buildResponse(errorCode, message, List.of());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -89,21 +87,23 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ErrorCode.INVALID_TYPE_VALUE;
         String message = String.format("요청 파라미터(%s)의 형식이 올바르지 않습니다.", ex.getName());
         log.warn("Type mismatch for parameter '{}': {}", ex.getName(), ex.getValue());
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode, message, currentRequestId()));
+        return buildResponse(errorCode, message, List.of());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
         log.error("Unhandled exception occurred", ex);
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode, errorCode.getMessage(), currentRequestId()));
+        return buildResponse(errorCode, errorCode.getMessage(), List.of());
     }
 
-    private String currentRequestId() {
-        return MDC.get(MdcLoggingFilter.MDC_REQUEST_ID_KEY);
+    private ResponseEntity<ErrorResponse> buildResponse(
+            ErrorCode errorCode,
+            String message,
+            List<ErrorResponse.FieldErrorDetail> fieldErrors
+    ) {
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(ErrorResponse.of(errorCode, message, MDC.get(MdcLoggingFilter.MDC_REQUEST_ID_KEY), fieldErrors));
     }
 }

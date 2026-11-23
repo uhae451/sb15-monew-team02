@@ -17,11 +17,12 @@ public record CursorPageResponse<T>(
             long totalElements,
             boolean hasNext
     ) {
+        List<T> safeContent = content != null ? List.copyOf(content) : List.of();
         return new CursorPageResponse<>(
-                content,
+                safeContent,
                 hasNext ? nextCursor : null,
                 hasNext ? nextAfter : null,
-                content.size(),
+                safeContent.size(),
                 totalElements,
                 hasNext
         );

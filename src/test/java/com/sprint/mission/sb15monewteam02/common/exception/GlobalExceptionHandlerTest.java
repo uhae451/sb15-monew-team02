@@ -84,6 +84,24 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("필수 요청 파라미터 누락 시 400을 반환한다")
+    void handlesMissingRequestParameter() throws Exception {
+        mockMvc.perform(get("/test/type"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("MISSING_REQUEST_PARAMETER"));
+    }
+
+    @Test
+    @DisplayName("JSON 파싱 실패 시 400을 반환한다")
+    void handlesHttpMessageNotReadable() throws Exception {
+        mockMvc.perform(post("/test/validate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{invalid-json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT_VALUE"));
+    }
+
+    @Test
     @DisplayName("예상하지 못한 예외 발생 시 500을 반환한다")
     void handlesUnexpectedException() throws Exception {
         mockMvc.perform(get("/test/unexpected"))
@@ -96,7 +114,7 @@ class GlobalExceptionHandlerTest {
     static class DummyController {
         @GetMapping("/test/business")
         void throwBusiness() {
-            throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+            throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND, "커스텀 메시지");
         }
 
         @PostMapping("/test/validate")

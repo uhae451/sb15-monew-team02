@@ -86,4 +86,18 @@ class MdcLoggingFilterTest {
         assertThat(MDC.get(MdcLoggingFilter.MDC_REQUEST_ID_KEY)).isNull();
         assertThat(MDC.get(MdcLoggingFilter.MDC_CLIENT_IP_KEY)).isNull();
     }
+
+    @Test
+    @DisplayName("X-Forwarded-For가 unknown이면 X-Real-IP를 클라이언트 IP로 사용한다")
+    void fallsBackToRealIpWhenForwardedForIsUnknown() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/comments");
+        request.addHeader("X-Forwarded-For", "unknown");
+        request.addHeader("X-Real-IP", "198.51.100.7");
+        request.setRemoteAddr("127.0.0.1");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) -> {});
+
+        assertThat(response.getHeader(MdcLoggingFilter.HEADER_CLIENT_IP)).isEqualTo("198.51.100.7");
+    }
 }
