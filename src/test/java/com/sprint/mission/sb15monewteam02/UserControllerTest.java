@@ -126,4 +126,43 @@ class UserControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("USR_001"));
     }
+
+    @ParameterizedTest(name = "[{index}] nickname = \"{0}\"")
+    @ValueSource(strings = {"a", "012345678901234567890"})
+    @DisplayName("닉네임이 2자 미만이거나 20자를 넘으면 400 Bad Request를 반환한다")
+    void create_fail_invalidNicknameSize(String invalidNickname) throws Exception {
+        String body = """
+                {
+                  "email": "test@example.com",
+                  "nickname": "%s",
+                  "password": "password123"
+                }
+                """.formatted(invalidNickname);
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+
+        then(userService).should(never()).create(any());
+    }
+
+    @Test
+    @DisplayName("비밀번호가 8자 미만이면 400 Bad Request를 반환한다")
+    void create_fail_shortPassword() throws Exception {
+        String body = """
+                {
+                  "email": "test@example.com",
+                  "nickname": "테스터",
+                  "password": "short"
+                }
+                """;
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+
+        then(userService).should(never()).create(any());
+    }
 }
