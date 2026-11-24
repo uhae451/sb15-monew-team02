@@ -1,5 +1,6 @@
 package com.sprint.mission.sb15monewteam02.common.interest;
 
+import com.sprint.mission.sb15monewteam02.common.exception.InterestKeywordEmptyException;
 import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class InterestTest {
 
         // when&then
         assertThatThrownBy(() -> interest.getKeywords().add("머신러닝"))
-                .isInstanceOf(Exception.class);
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -44,7 +45,7 @@ class InterestTest {
 
         // when
         assertThatThrownBy(() -> interest.updateKeywords(List.of()))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(InterestKeywordEmptyException.class);
 
         // then
         assertThat(interest.getKeywords()).containsExactly("AI");

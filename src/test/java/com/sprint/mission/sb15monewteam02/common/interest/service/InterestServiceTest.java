@@ -57,6 +57,13 @@ class InterestServiceTest {
     }
 
     @Test
+    void 관심사를_생성하면_여러_키워드가_그대로_보존된다() {
+        Interest interest = Interest.create("인공지능", List.of("AI", "머신러닝"));
+
+        assertThat(interest.getKeywords()).containsExactly("AI", "머신러닝");
+    }
+
+    @Test
     void 등록된_관심사가_하나도_없으면_바로_저장한다() {
         when(interestRepository.findAll()).thenReturn(List.of());
         when(interestRepository.save(any(Interest.class)))
