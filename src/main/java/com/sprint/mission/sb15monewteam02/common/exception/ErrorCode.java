@@ -15,8 +15,9 @@ public enum ErrorCode {
   INTERNAL_ERROR("CMN_999","서버에 문제가 발생했습니다",HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 관심사 예외
-  INTEREST_KEYWORD_EMPTY("IRT_001", "키워드는 1개 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
-  INTEREST_NAME_BLANK("IRT_002", "관심사 이름은 비어 있을 수 없습니다.", HttpStatus.BAD_REQUEST)
+  INTEREST_KEYWORD_EMPTY("ITR_001", "키워드는 1개 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
+  INTEREST_NAME_BLANK("ITR_002", "관심사 이름은 비어 있을 수 없습니다.", HttpStatus.BAD_REQUEST),
+  INTEREST_NAME_SIMILAR("ITR_003","유사한 이름의 관심사가 이미 존재합니다.", HttpStatus.BAD_REQUEST)
   ;
 
   private final String code;
