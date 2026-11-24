@@ -5,7 +5,6 @@ import com.sprint.mission.sb15monewteam02.user.dto.UserCreateRequest;
 import com.sprint.mission.sb15monewteam02.user.dto.UserDto;
 import com.sprint.mission.sb15monewteam02.user.entity.User;
 import com.sprint.mission.sb15monewteam02.user.repository.UserRepository;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

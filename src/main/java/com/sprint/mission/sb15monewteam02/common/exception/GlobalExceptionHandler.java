@@ -1,7 +1,6 @@
 package com.sprint.mission.sb15monewteam02.common.exception;
 
 import com.sprint.mission.sb15monewteam02.common.dto.ErrorResponse;
-import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
