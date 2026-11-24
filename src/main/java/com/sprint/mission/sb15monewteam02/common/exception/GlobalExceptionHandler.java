@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -16,6 +17,15 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {
     ErrorCode errorCode = exception.getErrorCode();
     return ResponseEntity.status(errorCode.getHttpStatus()).body(ErrorResponse.of(errorCode));
+  }
+  @ExceptionHandler(DuplicateEmailException.class)
+  public ResponseEntity<ErrorResponse> handleDuplicateEmailException(DuplicateEmailException exception) {
+    ErrorCode errorCode = exception.getErrorCode();
+    return ResponseEntity.status(errorCode.getHttpStatus()).body(ErrorResponse.of(errorCode));
+  }
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
+    return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_INPUT));
   }
 
   @ExceptionHandler(Exception.class)
