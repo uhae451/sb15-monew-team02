@@ -1,6 +1,6 @@
 package com.sprint.mission.sb15monewteam02.common.interest;
 
-import com.sprint.mission.sb15monewteam02.common.exception.ErrorCode;
+import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
