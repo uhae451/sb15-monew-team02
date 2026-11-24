@@ -1,16 +1,16 @@
 package com.sprint.mission.sb15monewteam02;
 
 
-import com.sprint.mission.sb15monewteam02.newsapp.user.dto.UserCreateRequest;
-import com.sprint.mission.sb15monewteam02.newsapp.user.dto.UserDto;
-import com.sprint.mission.sb15monewteam02.newsapp.user.exception.DuplicateEmailException;
-import com.sprint.mission.sb15monewteam02.newsapp.user.service.UserService;
+import com.sprint.mission.sb15monewteam02.user.dto.UserCreateRequest;
+import com.sprint.mission.sb15monewteam02.user.dto.UserDto;
+import com.sprint.mission.sb15monewteam02.common.exception.DuplicateEmailException;
+import com.sprint.mission.sb15monewteam02.user.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.UUID;
 
+import static com.sprint.mission.sb15monewteam02.common.exception.ErrorCode.DUPLICATE_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -25,7 +26,7 @@ import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import com.sprint.mission.sb15monewteam02.user.controller.UserController;
 /**
  * UserController 웹 계층 테스트
  * - Controller, 예외 처리(@RestControllerAdvice), Bean Validation만 띄운다.
@@ -109,7 +110,7 @@ class UserControllerTest {
     void create_fail_duplicateEmail() throws Exception {
         // given: Service가 중복 예외를 던진다고 가정
         given(userService.create(any(UserCreateRequest.class)))
-                .willThrow(new DuplicateEmailException("test@example.com"));
+                .willThrow(new DuplicateEmailException(DUPLICATE_EMAIL));
 
         String body = """
                 {
@@ -123,6 +124,6 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409));
+                .andExpect(jsonPath("$.code").value("USR_001"));
     }
 }
