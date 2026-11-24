@@ -1,5 +1,7 @@
 package com.sprint.mission.sb15monewteam02.common.interest;
 
+import com.sprint.mission.sb15monewteam02.common.exception.InterestKeywordEmptyException;
+import com.sprint.mission.sb15monewteam02.common.exception.InterestNameBlankException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -42,16 +44,14 @@ public class Interest {
     // 키워드 검증
     private static void validateKeywords(List<String> keywords) {
         if (keywords == null || keywords.isEmpty()) {
-            /// 추후 exception으로 통합 예정
-            throw new IllegalArgumentException("키워드는 1개 이상이어야 합니다.");
+            throw new InterestKeywordEmptyException();
         }
     }
 
     // 관심사 생성
     public static Interest create(String name, List<String> keywords) {
         if (name == null || name.isBlank()) {
-            /// 추후 exception으로 통합 예정
-            throw new IllegalArgumentException("관심사 이름은 비어 있을 수 없습니다.");
+            throw new InterestNameBlankException();
         }
         validateKeywords(keywords);
         return new Interest(name, keywords);

@@ -9,9 +9,14 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
   // 예시
+
   //   MEMBER_NOT_FOUND("MEM_001","회원을 찾을 수 없습니다.",HttpStatus.NOT_FOUND)
 
-  INTERNAL_ERROR("CMN_999","서버에 문제가 발생했습니다",HttpStatus.INTERNAL_SERVER_ERROR)
+  INTERNAL_ERROR("CMN_999","서버에 문제가 발생했습니다",HttpStatus.INTERNAL_SERVER_ERROR),
+
+  // 관심사 예외
+  INTEREST_KEYWORD_EMPTY("IRT_001", "키워드는 1개 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
+  INTEREST_NAME_BLANK("IRT_002", "관심사 이름은 비어 있을 수 없습니다.", HttpStatus.BAD_REQUEST)
   ;
 
   private final String code;
