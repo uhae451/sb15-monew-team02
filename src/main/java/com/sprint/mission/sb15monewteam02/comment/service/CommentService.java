@@ -83,8 +83,11 @@ public class CommentService {
 
   @Transactional(readOnly = true)
   public CursorPageResponse<CommentResponse> getComments(CommentSearchCondition condition, UUID requestUserId) {
-    articleReader.findActiveArticle(condition.articleId())
-        .orElseThrow(() -> new ArticleNotFoundException());
+    if (condition.articleId() != null) {
+      articleReader.findActiveArticle(condition.articleId())
+          .orElseThrow(() -> new ArticleNotFoundException());
+    }
+
 
     CommentOrderBy orderBy = condition.orderBy() != null ? condition.orderBy() : CommentOrderBy.CREATED_AT;
     SortDirection direction = condition.direction() != null ? condition.direction() : SortDirection.DESC;
