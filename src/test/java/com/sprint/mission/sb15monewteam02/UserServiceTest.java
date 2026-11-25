@@ -122,10 +122,10 @@ class UserServiceTest {
             assertThatThrownBy(() -> userService.login(request))
                     .isInstanceOf(InvalidCredentialsException.class);
         }
+
         @Test
         @DisplayName("비밀번호가 틀리면 InvalidCredentialsException이 발생한다")
         void fail_wrongPassword() {
-
             User user = new User("test@example.com", "테스터", "different-pw");
             // given
             given(userRepository.findByEmail(any())).willReturn(Optional.of(user));

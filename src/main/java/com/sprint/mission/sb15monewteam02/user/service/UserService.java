@@ -45,6 +45,10 @@ public class UserService {
         if (user.isDeleted()) {
             throw new InvalidCredentialsException();
         }
+        // 비밀번호가 같지 않을시 예외처리
+        if (!user.getPassword().equals(request.password())) {
+            throw new InvalidCredentialsException();
+        }
         return UserDto.from(user);
     }
 }
