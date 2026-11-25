@@ -1,6 +1,7 @@
 package com.sprint.mission.sb15monewteam02.common.interest.service;
 
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;
+import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
 import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
 import com.sprint.mission.sb15monewteam02.common.interest.repository.InterestRepository;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,22 @@ public class InterestService {
         return interestRepository.save(Interest.create(name, keywords));
     }
 
+    // 관심사 삭제
+    public void delete(UUID id) {
+        Interest interest = interestRepository.findById(id)
+                .orElseThrow(InterestNotFoundException::new);
+        interestRepository.delete(interest);
+    }
+
+    // 키워드 수정
+    public Interest updateKeywords(UUID id, List<String> keywords) {
+        Interest interest = interestRepository.findById(id)
+                .orElseThrow(InterestNotFoundException::new);
+
+        interest.updateKeywords(keywords);
+        return interest;
+    }
+
     private boolean isSimilar(String a, String b) {
         return calculateSimilarity(a, b) >= SIMILAR_THRESHOLD;
     }
@@ -43,6 +61,7 @@ public class InterestService {
     }
 
     // 한 글자를 추가·삭제·교체하는 최소 횟수
+    // 레벤슈타인 알고리즘
     private int levenshteinDistance(String a, String b) {
         int[] prev = new int[b.length() + 1];
         int[] curr = new int[b.length() + 1];
