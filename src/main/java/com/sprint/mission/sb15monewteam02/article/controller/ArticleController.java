@@ -1,0 +1,179 @@
+
+package com.sprint.mission.sb15monewteam02.article.controller;
+
+import com.sprint.mission.sb15monewteam02.article.dto.ArticleOrder;
+import com.sprint.mission.sb15monewteam02.article.dto.ArticlePage;
+import com.sprint.mission.sb15monewteam02.article.dto.ArticleResponse;
+import com.sprint.mission.sb15monewteam02.article.dto.ArticleSearchRequest;
+import com.sprint.mission.sb15monewteam02.article.dto.ArticleViewResponse;
+import com.sprint.mission.sb15monewteam02.article.exception.ArticleNotFoundException;
+import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/articles")
+public class ArticleController {
+
+  private final ArticleService articleService;
+
+  public ArticleController(ArticleService articleService) {
+    this.articleService = articleService;
+  }
+
+  // 1. 기사 목록 조회, 검색, 정렬, 페이지네이션
+  @GetMapping
+  public ResponseEntity<ArticlePage> getArticles(
+      @RequestParam(required = false) String keyword,
+      @RequestParam(required = false) UUID interestId,
+      @RequestParam(required = false) Set<String> sourceIn,
+      @RequestParam(required = false) String publishDateFrom,
+      @RequestParam(required = false) String publishDateTo,
+      @RequestParam(defaultValue = "publishDate") ArticleOrder orderBy,
+      @RequestParam(defaultValue = "DESC") Direction direction,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) String after,
+      @RequestParam(defaultValue = "10") int limit,
+      @RequestHeader(
+          value = "Monew-Request-User-ID",
+          required = false
+      ) UUID userId
+  ) {
+
+    ArticleSearchRequest request = new ArticleSearchRequest(
+        keyword,
+        interestId,
+        sourceIn == null ? Set.of() : sourceIn,
+        parseDate(publishDateFrom),
+        parseDate(publishDateTo),
+        orderBy,
+        direction,
+        cursor,
+        after,
+        limit
+    );
+
+    return ResponseEntity.ok(
+        articleService.search(request, userId)
+    );
+  }
+
+  // 2. 기사 상세 조회
+  @GetMapping("/{articleId}")
+  public ResponseEntity<ArticleResponse> getArticle(
+      @PathVariable UUID articleId,
+      @RequestHeader(
+          value = "Monew-Request-User-ID",
+          required = false
+      ) UUID userId
+  ) {
+
+    return ResponseEntity.ok(
+        articleService.getArticleResponse(articleId, userId)
+    );
+  }
+
+  // 3. 뉴스 출처 목록 조회
+  @GetMapping("/sources")
+  public ResponseEntity<List<String>> getSources() {
+
+    return ResponseEntity.ok(
+        articleService.getSources()
+    );
+  }
+
+  // 4. 기사 조회 기록 등록 및 중복 조회 처리
+  @PostMapping("/{articleId}/article-views")
+  public ResponseEntity<ArticleViewResponse> recordView(
+      @PathVariable UUID articleId,
+      @RequestHeader("Monew-Request-User-ID") UUID userId
+  ) {
+
+    return ResponseEntity.ok(
+        articleService.recordViewResponse(articleId, userId)
+    );
+  }
+
+  // 5. 기사 논리 삭제
+  @DeleteMapping("/{articleId}")
+  public ResponseEntity<Void> softDelete(
+      @PathVariable UUID articleId
+  ) {
+
+    articleService.softDelete(articleId);
+
+    return ResponseEntity.noContent().build();
+  }
+
+  // 6. 기사 물리 삭제
+  @DeleteMapping("/{articleId}/hard")
+  public ResponseEntity<Void> hardDelete(
+      @PathVariable UUID articleId
+  ) {
+
+    articleService.hardDelete(articleId);
+
+    return ResponseEntity.noContent().build();
+  }
+
+  // 7. 존재하지 않는 기사 예외 처리
+  @ExceptionHandler(ArticleNotFoundException.class)
+  public ResponseEntity<Map<String, String>> handleNotFound(
+      ArticleNotFoundException exception
+  ) {
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(Map.of(
+            "message",
+            exception.getMessage() == null
+                ? "기사를 찾을 수 없습니다."
+                : exception.getMessage()
+        ));
+  }
+
+  // 8. 잘못된 요청 예외 처리
+  @ExceptionHandler({
+      IllegalArgumentException.class,
+      DateTimeParseException.class
+  })
+  public ResponseEntity<Map<String, String>> handleBadRequest(
+      RuntimeException exception
+  ) {
+
+    return ResponseEntity.badRequest()
+        .body(Map.of(
+            "message",
+            exception.getMessage() == null
+                ? "잘못된 요청입니다."
+                : exception.getMessage()
+        ));
+  }
+
+  // 9. 프론트엔드 날짜 형식 변환
+  private Instant parseDate(String value) {
+
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+
+    try {
+      return Instant.parse(value);
+    } catch (DateTimeParseException exception) {
+      return LocalDateTime.parse(value)
+          .atZone(ZoneId.of("Asia/Seoul"))
+          .toInstant();
+    }
+  }
+}
