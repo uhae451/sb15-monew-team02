@@ -174,29 +174,35 @@ public class CommentService {
 
   @Transactional
   public CommentLikeResponse likeComment(UUID commentId, UUID requestUserId) {
+    // 사전 검증
     userReader.findActiveUser(requestUserId)
         .orElseThrow(() -> new UserNotFoundException());
     Comment comment = findActiveComment(commentId);
-
+    // 중복 체크
     if (commentLikeRepository.existsByCommentIdAndUserId(commentId, requestUserId)) {
       throw new DuplicateCommentLikeException();
     }
 
+    // 좋아요 이력을 DB에 저장
     CommentLike savedLike = persistCommentLike(comment, requestUserId);
 
+    // 좋아요 증가 (동시성 문제 해결)
     int updatedRows = commentRepository.incrementLikeCount(commentId);
     if (updatedRows == 0) {
       throw new CommentNotFoundException();
     }
 
+    // 카운트 동기화 (DB에서 댓글을 다시 조회하여 실제로 최신 likeCount 가져옴)
     Comment refreshedComment = commentRepository.findByIdAndDeletedFalse(commentId)
         .orElse(comment);
 
+    // 연관 도메인(User, Article) 데이터 조회 - Comment 엔티티만으로는 알 수 없는 외부 도메인 조합
     String articleTitle = articleReader.findActiveArticle(refreshedComment.getArticleId())
         .map(ArticleSummary::title)
         .orElse("");
     String commentUserNickname = resolveNickname(refreshedComment.getUserId());
 
+    // 이벤트 객체 생성(후속 처리를 위한 이벤트)
     eventPublisher.publishCommentLiked(new CommentLikedEvent(
         savedLike.getId(),
         refreshedComment.getId(),
@@ -213,7 +219,7 @@ public class CommentService {
 
     log.info("Comment liked: commentId={}, userId={}, likeCount={}",
         commentId, requestUserId, refreshedComment.getLikeCount());
-
+    // 매퍼를 통해 CommmentLikeResponse DTO에 매핑하여 반환
     return commentMapper.toLikeResponse(
         savedLike,
         refreshedComment,
