@@ -45,13 +45,13 @@ public class CommentController {
   @Operation(summary = "댓글 목록 조회 (커서 페이지네이션, 정렬 기준 1개)")
   @GetMapping
   public ResponseEntity<CursorPageResponse<CommentResponse>> getComments(
-      @RequestParam UUID articleId,
+      @RequestParam(required = false) UUID articleId,
       @RequestParam(defaultValue = "createdAt") CommentOrderBy orderBy,
       @RequestParam(defaultValue = "DESC") SortDirection direction,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) String after,
       @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit,
-      @RequestHeader(value = REQUEST_USER_HEADER, required = false) UUID requestUserId
+      @RequestHeader(value = REQUEST_USER_HEADER) UUID requestUserId
   ) {
     CommentSearchCondition condition = new CommentSearchCondition(
         articleId, orderBy, direction, cursor, after, limit
@@ -108,6 +108,6 @@ public class CommentController {
       @RequestHeader(REQUEST_USER_HEADER) UUID requestUserId
   ) {
     commentService.unlikeComment(commentId, requestUserId);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.ok().build();
   }
 }
