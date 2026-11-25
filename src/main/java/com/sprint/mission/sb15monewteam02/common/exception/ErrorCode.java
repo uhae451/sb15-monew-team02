@@ -18,7 +18,7 @@ public enum ErrorCode {
   INTEREST_KEYWORD_EMPTY("ITR_001", "키워드는 1개 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
   INTEREST_NAME_BLANK("ITR_002", "관심사 이름은 비어 있을 수 없습니다.", HttpStatus.BAD_REQUEST),
   INTEREST_NAME_SIMILAR("ITR_003","유사한 이름의 관심사가 이미 존재합니다.", HttpStatus.BAD_REQUEST),
-  INTEREST_NOT_FOUND("IRT_004", "관심사를 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
+  INTEREST_NOT_FOUND("ITR_004", "관심사를 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
   ;
 
   private final String code;

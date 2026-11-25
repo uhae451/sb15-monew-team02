@@ -1,7 +1,7 @@
 package com.sprint.mission.sb15monewteam02.common.exception;
 
-public class InterestNameSimilarException extends RuntimeException {
+public class InterestNameSimilarException extends BusinessException {
     public InterestNameSimilarException() {
-        super(String.valueOf(ErrorCode.INTEREST_NAME_SIMILAR));
+        super(ErrorCode.INTEREST_NAME_SIMILAR);
     }
 }
