@@ -1,7 +1,9 @@
 package com.sprint.mission.sb15monewteam02;
 import com.sprint.mission.sb15monewteam02.common.exception.DuplicateEmailException;
+import com.sprint.mission.sb15monewteam02.common.exception.InvalidCredentialsException;
 import com.sprint.mission.sb15monewteam02.user.dto.UserCreateRequest;
 import com.sprint.mission.sb15monewteam02.user.dto.UserDto;
+import com.sprint.mission.sb15monewteam02.user.dto.UserLoginRequest;
 import com.sprint.mission.sb15monewteam02.user.entity.User;
 import com.sprint.mission.sb15monewteam02.user.repository.UserRepository;
 import com.sprint.mission.sb15monewteam02.user.service.UserService;
@@ -13,6 +15,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,4 +97,53 @@ class UserServiceTest {
             then(userRepository).should(never()).save(any());
         }
     }
+    @Nested
+    @DisplayName("로그인")
+    class login{
+        private final UserLoginRequest request =
+                new UserLoginRequest("test@example.com", "password123");
+        @Test
+        @DisplayName(("이메일과 비밀번호가 맞으면 UserDto를 반환한다"))
+        void success(){
+            User user = new User("test@example.com", "test", "password123");
+            // given
+            given(userRepository.findByEmail("test@example.com")).willReturn(Optional.of(user));
+            // when
+            UserDto result = userService.login(request);
+            // then
+            assertThat(result.email()).isEqualTo("test@example.com");
+        }
+        @Test
+        @DisplayName("존재하지 않는 이메일이면 InvalidCredentialsException이 발생한다")
+        void fail_emailNotFound() {
+            // given
+            given(userRepository.findByEmail(any())).willReturn(Optional.empty());
+            // when then
+            assertThatThrownBy(() -> userService.login(request))
+                    .isInstanceOf(InvalidCredentialsException.class);
+        }
+        @Test
+        @DisplayName("비밀번호가 틀리면 InvalidCredentialsException이 발생한다")
+        void fail_wrongPassword() {
+
+            User user = new User("test@example.com", "테스터", "different-pw");
+            // given
+            given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
+            // when then
+            assertThatThrownBy(() -> userService.login(request))
+                    .isInstanceOf(InvalidCredentialsException.class);
+        }
+        @Test
+        @DisplayName("논리 삭제된 사용자는 로그인할 수 없다")
+        void fail_deletedUser() {
+            User user = new User("test@example.com", "테스터", "password123");
+            user.delete();
+            // given
+            given(userRepository.findByEmail(any())).willReturn(Optional.of(user));
+            // when then
+            assertThatThrownBy(() -> userService.login(request))
+                    .isInstanceOf(InvalidCredentialsException.class);
+        }
+    }
+
 }

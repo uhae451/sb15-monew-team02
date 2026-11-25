@@ -17,11 +17,7 @@ public class GlobalExceptionHandler {
     ErrorCode errorCode = exception.getErrorCode();
     return ResponseEntity.status(errorCode.getHttpStatus()).body(ErrorResponse.of(errorCode));
   }
-  @ExceptionHandler(DuplicateEmailException.class)
-  public ResponseEntity<ErrorResponse> handleDuplicateEmailException(DuplicateEmailException exception) {
-    ErrorCode errorCode = exception.getErrorCode();
-    return ResponseEntity.status(errorCode.getHttpStatus()).body(ErrorResponse.of(errorCode));
-  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
     return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_INPUT));

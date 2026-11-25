@@ -110,7 +110,7 @@ class UserControllerTest {
     void create_fail_duplicateEmail() throws Exception {
         // given: Service가 중복 예외를 던진다고 가정
         given(userService.create(any(UserCreateRequest.class)))
-                .willThrow(new DuplicateEmailException(DUPLICATE_EMAIL));
+                .willThrow(new DuplicateEmailException());
 
         String body = """
                 {

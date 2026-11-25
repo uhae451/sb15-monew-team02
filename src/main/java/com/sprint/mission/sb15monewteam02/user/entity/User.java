@@ -33,4 +33,9 @@ public class User {
         this.nickname = nickname;
         this.createdAt = Instant.now();
     }
+    public void delete(){
+        this.deletedAt = Instant.now();
+    }
+    public boolean isDeleted() { return deletedAt != null; }
+
 }
