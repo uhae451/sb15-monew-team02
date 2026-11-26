@@ -75,8 +75,6 @@ public class GlobalExceptionHandler {
 
   // 필수 헤더 누락 및 잘못된 요청 데이터를 400 오류로 처리한다.
   @ExceptionHandler({
-      MissingRequestHeaderException.class,
-      MethodArgumentTypeMismatchException.class,
       IllegalArgumentException.class,
       DateTimeParseException.class
   })
