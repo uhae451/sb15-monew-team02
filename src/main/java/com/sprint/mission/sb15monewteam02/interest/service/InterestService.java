@@ -2,8 +2,12 @@ package com.sprint.mission.sb15monewteam02.interest.service;
 
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
+import com.sprint.mission.sb15monewteam02.interest.dto.GetInterestResponse;
+import com.sprint.mission.sb15monewteam02.interest.dto.InterestDto;
 import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.repository.InterestOrderBy;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestRepository;
+import com.sprint.mission.sb15monewteam02.interest.repository.InterestSearchCondition;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +41,37 @@ public class InterestService {
         Interest interest = interestRepository.findById(id)
                 .orElseThrow(InterestNotFoundException::new);
         interestRepository.delete(interest);
+    }
+
+    @Transactional(readOnly = true)
+    public GetInterestResponse search(InterestSearchCondition condition) {
+
+        // Limit + 1을 가져와서 다음 페이지가 있는지 계산
+        InterestSearchCondition fetchCondition = new InterestSearchCondition(
+                condition.keyword(), condition.orderBy(), condition.direction(),
+                condition.cursor(), condition.after(), condition.limit() + 1
+        );
+        List<Interest> rows = interestRepository.searchInterests(fetchCondition);
+
+        boolean hasNext = rows.size() > condition.limit();
+        List<Interest> page = hasNext ? rows.subList(0, condition.limit()) : rows;
+
+        List<InterestDto> content = page.stream().map(InterestDto::from).toList();
+
+        String nextCursor = null;
+        String nextAfter = null;
+        if (hasNext) {
+            Interest last = page.get(page.size() - 1);
+            nextCursor = condition.orderBy() == InterestOrderBy.SUBSCRIBER_COUNT
+                    ? String.valueOf(last.getSubscriberCount())
+                    : last.getName();
+            nextAfter = last.getId().toString();
+        }
+
+        // TODO: 검색 조건을 반영한 count 쿼리로 바꿔야 함 (지금은 전체 개수)
+        long totalElements = interestRepository.count();
+
+        return new GetInterestResponse(content, nextCursor, nextAfter, content.size(), totalElements, hasNext);
     }
 
     // 키워드 수정
