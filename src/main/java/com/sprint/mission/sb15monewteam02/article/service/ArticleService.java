@@ -11,6 +11,7 @@ import com.sprint.mission.sb15monewteam02.article.exception.ArticleNotFoundExcep
 import com.sprint.mission.sb15monewteam02.article.exception.DuplicateArticleException;
 import com.sprint.mission.sb15monewteam02.article.repository.ArticleRepository;
 import com.sprint.mission.sb15monewteam02.article.repository.ArticleViewRepository;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -172,5 +173,43 @@ public class ArticleService {
     Article article = lockArticle(id);
     if (article.isDeleted()) throw new ArticleNotFoundException(id);
     return article;
+  }
+
+  // 수집한 기사를 저장하고 기존 기사에는 새로운 관심사만 추가한다.
+  public boolean saveCollectedArticle(
+      ArticleCreateRequest request,
+      Set<UUID> interestIds) {
+
+    // 일치하는 관심사가 없는 기사는 저장하지 않는다.
+    if (interestIds.isEmpty()) {
+      return false;
+    }
+
+    var existing = articleRepository.findBySourceUrl(request.sourceUrl());
+
+    // 이미 저장된 기사를 처리한다.
+    if (existing.isPresent()) {
+
+      Article article = existing.get();
+
+      // 논리 삭제된 기사는 다시 등록하지 않는다.
+      if (article.isDeleted()) {
+        return false;
+      }
+
+      // 기존 관심사를 유지하면서 새로운 관심사를 추가한다.
+      Set<UUID> merged = new HashSet<>(article.getInterestIds());
+      merged.addAll(interestIds);
+
+      article.replaceInterests(merged);
+
+      return false;
+    }
+
+    // 신규 기사를 저장하고 관심사를 연결한다.
+    Article article = create(request);
+    article.replaceInterests(interestIds);
+
+    return true;
   }
 }

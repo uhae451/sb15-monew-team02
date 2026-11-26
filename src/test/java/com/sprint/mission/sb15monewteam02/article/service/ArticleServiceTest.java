@@ -276,4 +276,111 @@ public class ArticleServiceTest {
     // 실제 저장 메서드가 호출되었는지 검증
     verify(articleRepository).save(any(Article.class));
   }
+
+  // 신규 기사와 관심사 ID가 정상적으로 저장되는지 검증한다.
+  @Test
+  void 신규_기사와_관심사를_저장한다() {
+
+    var input = request("https://example.com/new");
+    UUID interestId = UUID.randomUUID();
+
+    when(articleRepository.findBySourceUrl(input.sourceUrl()))
+        .thenReturn(Optional.empty());
+
+    when(articleRepository.save(any(Article.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    boolean saved = articleService.saveCollectedArticle(
+        input, Set.of(interestId));
+
+    var captor = ArgumentCaptor.forClass(Article.class);
+
+    verify(articleRepository).save(captor.capture());
+
+    assertTrue(saved);
+    assertEquals(Set.of(interestId),
+        captor.getValue().getInterestIds());
+  }
+
+  // 기존 기사를 중복 저장하지 않는지 검증한다.
+  @Test
+  void 기존_기사는_중복_저장하지_않는다() {
+
+    Article article = validArticle();
+    var input = request(article.getSourceUrl());
+    UUID interestId = UUID.randomUUID();
+
+    article.replaceInterests(Set.of(interestId));
+
+    when(articleRepository.findBySourceUrl(input.sourceUrl()))
+        .thenReturn(Optional.of(article));
+
+    boolean saved = articleService.saveCollectedArticle(
+        input, Set.of(interestId));
+
+    assertFalse(saved);
+    assertEquals(Set.of(interestId), article.getInterestIds());
+
+    verify(articleRepository, never()).save(any(Article.class));
+  }
+
+  // 기존 관심사를 유지하면서 새로운 관심사를 추가하는지 검증한다.
+  @Test
+  void 기존_기사에_새로운_관심사를_추가한다() {
+
+    Article article = validArticle();
+    var input = request(article.getSourceUrl());
+
+    UUID oldId = UUID.randomUUID();
+    UUID newId = UUID.randomUUID();
+
+    article.replaceInterests(Set.of(oldId));
+
+    when(articleRepository.findBySourceUrl(input.sourceUrl()))
+        .thenReturn(Optional.of(article));
+
+    boolean saved = articleService.saveCollectedArticle(
+        input, Set.of(newId));
+
+    assertFalse(saved);
+    assertEquals(Set.of(oldId, newId), article.getInterestIds());
+
+    verify(articleRepository, never()).save(any(Article.class));
+  }
+
+  // 논리 삭제된 기사가 다시 등록되지 않는지 검증한다.
+  @Test
+  void 논리_삭제된_기사는_다시_저장하지_않는다() {
+
+    Article article = validArticle();
+    article.softDelete();
+
+    var input = request(article.getSourceUrl());
+
+    when(articleRepository.findBySourceUrl(input.sourceUrl()))
+        .thenReturn(Optional.of(article));
+
+    boolean saved = articleService.saveCollectedArticle(
+        input, Set.of(UUID.randomUUID()));
+
+    assertFalse(saved);
+    assertTrue(article.isDeleted());
+    assertTrue(article.getInterestIds().isEmpty());
+
+    verify(articleRepository, never()).save(any(Article.class));
+  }
+
+  // 일치하는 관심사가 없는 기사는 저장하지 않는다.
+  @Test
+  void 관심사가_없는_기사는_저장하지_않는다() {
+
+    var input = request("https://example.com/news");
+
+    boolean saved = articleService.saveCollectedArticle(
+        input, Set.of());
+
+    assertFalse(saved);
+
+    Mockito.verifyNoInteractions(articleRepository);
+  }
 }

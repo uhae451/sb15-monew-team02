@@ -17,4 +17,8 @@ public interface ArticleRepository extends JpaRepository<Article, UUID>, Article
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select a from Article a where a.id = :id")
   Optional<Article> findForUpdate(@Param("id") UUID id);
+
+  // 기사 원본 URL을 기준으로 기존 기사를 조회하고 수정 시 충돌을 방지한다.
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<Article> findBySourceUrl(String sourceUrl);
 }
