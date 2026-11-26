@@ -156,4 +156,63 @@ class ArticlePersistenceTest {
       assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
     }
   }
+
+  // 신규 기사와 관심사 관계가 실제 DB에 저장되는지 검증한다.
+  @Test
+  void 신규_기사와_관심사가_DB에_저장된다() {
+
+    var input = request("collected-news");
+    UUID interestId = UUID.randomUUID();
+
+    assertTrue(service.saveCollectedArticle(
+        input, Set.of(interestId)));
+
+    assertEquals(1, articles.count());
+
+    Long count = jdbc.queryForObject(
+        "select count(*) from article_test.article_interests "
+            + "where interest_id = ?",
+        Long.class,
+        interestId
+    );
+
+    assertEquals(1L, count);
+  }
+
+  // 동일한 기사를 여러 번 수집해도 중복 저장되지 않는다.
+  @Test
+  void 동일한_기사는_DB에_한번만_저장된다() {
+
+    var input = request("duplicate-news");
+    Set<UUID> interestIds = Set.of(UUID.randomUUID());
+
+    assertTrue(service.saveCollectedArticle(input, interestIds));
+    assertFalse(service.saveCollectedArticle(input, interestIds));
+
+    assertEquals(1, articles.count());
+  }
+
+  // 기존 기사에 새로운 관심사가 실제로 추가되는지 검증한다.
+  @Test
+  void 기존_기사에_새로운_관심사가_DB에_추가된다() {
+
+    var input = request("merged-news");
+
+    UUID oldId = UUID.randomUUID();
+    UUID newId = UUID.randomUUID();
+
+    service.saveCollectedArticle(input, Set.of(oldId));
+    service.saveCollectedArticle(input, Set.of(newId));
+
+    assertEquals(1, articles.count());
+
+    Set<UUID> savedIds = new HashSet<>(
+        jdbc.queryForList(
+            "select interest_id from article_test.article_interests",
+            UUID.class
+        )
+    );
+
+    assertEquals(Set.of(oldId, newId), savedIds);
+  }
 }
