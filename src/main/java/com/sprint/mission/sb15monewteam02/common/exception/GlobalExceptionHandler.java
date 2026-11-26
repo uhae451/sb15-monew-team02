@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
       MissingServletRequestParameterException exception) {
     log.warn("필수 요청 파라미터가 누락되었습니다: {}", exception.getParameterName());
     return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.MISSING_REQUEST_PARAMETER));
-    // badRequest(ErrorCode.MISSING_REQUEST_PARAMETER);
+
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -65,7 +65,6 @@ public class GlobalExceptionHandler {
       MethodArgumentTypeMismatchException exception) {
     log.warn("요청 파라미터 타입이 올바르지 않습니다: {}={}", exception.getName(), exception.getValue());
     return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_TYPE_VALUE));
-    //badRequest(ErrorCode.INVALID_TYPE_VALUE);
   }
 
   @ExceptionHandler(Exception.class)
