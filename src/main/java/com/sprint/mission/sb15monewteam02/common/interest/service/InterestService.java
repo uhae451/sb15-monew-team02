@@ -22,6 +22,7 @@ public class InterestService {
 
     // 관심사 등록
     public Interest register(String name, List<String> keywords) {
+
         Interest newInterest = Interest.create(name, keywords); // 검증 먼저
         boolean tooSimilar = interestRepository.findAll().stream()
                 .anyMatch(existing -> isSimilar(existing.getName(), name));
