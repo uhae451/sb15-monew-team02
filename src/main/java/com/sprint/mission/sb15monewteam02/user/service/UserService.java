@@ -67,6 +67,13 @@ public class UserService {
         User user = findActiveUser(userId);
         user.delete();
     }
+    // 사용자 물리 삭제 (논리 삭제된 사용자도 삭제 가능)
+    @Transactional
+    public void hardDelete(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        userRepository.delete(user);
+    }
     // 논리 삭제되지 않은 사용자 조회
     private User findActiveUser(UUID userId) {
         return userRepository.findById(userId)

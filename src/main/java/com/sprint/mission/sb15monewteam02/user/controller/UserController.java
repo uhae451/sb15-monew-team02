@@ -41,4 +41,10 @@ public class UserController {
         userService.softDelete(userId);
         return ResponseEntity.noContent().build();
     }
+    //사용자 물리 삭제 api
+    @DeleteMapping("/{userId}/hard")
+    public ResponseEntity<Void> hardDelete(@PathVariable UUID userId) {
+        userService.hardDelete(userId);
+        return ResponseEntity.noContent().build();
+    }
 }
