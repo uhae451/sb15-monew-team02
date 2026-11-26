@@ -1,9 +1,9 @@
-package com.sprint.mission.sb15monewteam02.common.interest.service;
+package com.sprint.mission.sb15monewteam02.interest.service;
 
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
-import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
-import com.sprint.mission.sb15monewteam02.common.interest.repository.InterestRepository;
+import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.repository.InterestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

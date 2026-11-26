@@ -1,9 +1,9 @@
-package com.sprint.mission.sb15monewteam02.common.interest.controller;
+package com.sprint.mission.sb15monewteam02.interest.controller;
 
-import com.sprint.mission.sb15monewteam02.common.interest.dto.InterestDto;
-import com.sprint.mission.sb15monewteam02.common.interest.dto.InterestRegisterRequest;
-import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
-import com.sprint.mission.sb15monewteam02.common.interest.service.InterestService;
+import com.sprint.mission.sb15monewteam02.interest.dto.InterestDto;
+import com.sprint.mission.sb15monewteam02.interest.dto.InterestRegisterRequest;
+import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.service.InterestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -2,8 +2,9 @@ package com.sprint.mission.sb15monewteam02.common.interest.controller;
 
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
-import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
-import com.sprint.mission.sb15monewteam02.common.interest.service.InterestService;
+import com.sprint.mission.sb15monewteam02.interest.controller.InterestController;
+import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.service.InterestService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;

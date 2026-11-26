@@ -1,6 +1,7 @@
 package com.sprint.mission.sb15monewteam02.common.interest.repository;
 
-import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.repository.InterestRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
