@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NewsCollectionService {
@@ -63,20 +65,26 @@ public class NewsCollectionService {
         .toList();
   }
 
-  // 관심사 필터링을 통과한 기사를 저장하고 신규 저장 건수를 반환한다.
+  // 개별 기사 저장 실패를 기록하고 나머지 기사의 저장을 계속 진행한다.
   public int saveArticles(List<MatchedNewsArticle> articles) {
 
     int savedCount = 0;
 
     for (MatchedNewsArticle matched : articles) {
 
-      boolean saved = articleService.saveCollectedArticle(
-          matched.article(),
-          matched.interestIds()
-      );
+      try {
+        boolean saved = articleService.saveCollectedArticle(
+            matched.article(),
+            matched.interestIds()
+        );
 
-      if (saved) {
-        savedCount++;
+        if (saved) {
+          savedCount++;
+        }
+
+      } catch (RuntimeException e) {
+        log.error("뉴스 기사 저장 실패: {}",
+            matched.article().sourceUrl(), e);
       }
     }
 

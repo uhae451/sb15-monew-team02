@@ -255,4 +255,67 @@ class NewsCollectionServiceTest {
 
     verifyNoInteractions(articleService);
   }
+
+  // 일부 기사 저장에 실패해도 나머지 기사를 계속 저장한다.
+  @Test
+  void 기사_저장에_실패해도_다음_기사를_저장한다() {
+
+    var article1 = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java 뉴스",
+        Instant.now(),
+        "Java 관련 기사"
+    );
+
+    var article2 = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/2",
+        "Spring 뉴스",
+        Instant.now(),
+        "Spring 관련 기사"
+    );
+
+    Set<UUID> interestIds = Set.of(UUID.randomUUID());
+
+    var matched1 = new MatchedNewsArticle(article1, interestIds);
+    var matched2 = new MatchedNewsArticle(article2, interestIds);
+
+    when(articleService.saveCollectedArticle(article1, interestIds))
+        .thenThrow(new RuntimeException("기사 저장 실패"));
+
+    when(articleService.saveCollectedArticle(article2, interestIds))
+        .thenReturn(true);
+
+    int result = service.saveArticles(List.of(matched1, matched2));
+
+    assertEquals(1, result);
+
+    verify(articleService)
+        .saveCollectedArticle(article2, interestIds);
+  }
+
+  // 모든 기사 저장에 실패하면 신규 저장 건수 0을 반환한다.
+  @Test
+  void 모든_기사_저장에_실패하면_0을_반환한다() {
+
+    var article = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java 뉴스",
+        Instant.now(),
+        "Java 관련 기사"
+    );
+
+    Set<UUID> interestIds = Set.of(UUID.randomUUID());
+
+    var matched = new MatchedNewsArticle(article, interestIds);
+
+    when(articleService.saveCollectedArticle(article, interestIds))
+        .thenThrow(new RuntimeException("기사 저장 실패"));
+
+    int result = service.saveArticles(List.of(matched));
+
+    assertEquals(0, result);
+  }
 }
