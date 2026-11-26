@@ -11,8 +11,12 @@ public enum ErrorCode {
   // 예시
   //   MEMBER_NOT_FOUND("MEM_001","회원을 찾을 수 없습니다.",HttpStatus.NOT_FOUND)
 
-  INTERNAL_ERROR("CMN_999","서버에 문제가 발생했습니다",HttpStatus.INTERNAL_SERVER_ERROR)
+  INTERNAL_ERROR("CMN_999","서버에 문제가 발생했습니다",HttpStatus.INTERNAL_SERVER_ERROR),
+  DUPLICATE_EMAIL("USR_001","이미 가입된 이메일입니다.",HttpStatus.CONFLICT),
+  INVALID_INPUT("CMN_400","입력값이 올바르지 않습니다.",HttpStatus.BAD_REQUEST)
   ;
+
+
 
   private final String code;
 
