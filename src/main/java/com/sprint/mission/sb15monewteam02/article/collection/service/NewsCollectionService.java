@@ -7,6 +7,7 @@ import com.sprint.mission.sb15monewteam02.article.collection.filter.NewsKeywordF
 import com.sprint.mission.sb15monewteam02.article.collection.mapper.NewsArticleMapper;
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
 import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -89,5 +90,44 @@ public class NewsCollectionService {
     }
 
     return savedCount;
+  }
+
+  // 뉴스 수집, 관심사 필터링, 기사 저장을 순차적으로 수행한다.
+  public int collectAndSave(
+      Map<UUID, List<String>> interestKeywords,
+      Map<String, String> rssSources) {
+
+    // 등록된 관심사가 없으면 뉴스 수집을 진행하지 않는다.
+    if (interestKeywords.isEmpty()) {
+      return 0;
+    }
+
+    List<ArticleCreateRequest> articles = new ArrayList<>();
+
+    // 중복 키워드를 제거하고 네이버 뉴스를 수집한다.
+    interestKeywords.values().stream()
+        .flatMap(List::stream)
+        .filter(keyword -> keyword != null && !keyword.isBlank())
+        .map(String::trim)
+        .distinct()
+        .forEach(keyword -> {
+          try {
+            articles.addAll(collectNaver(keyword));
+          } catch (RuntimeException e) {
+            log.error("네이버 뉴스 수집 실패: {}", keyword, e);
+          }
+        });
+
+    // 언론사별 RSS 뉴스를 수집한다.
+    rssSources.forEach((source, url) -> {
+      try {
+        articles.addAll(collectRss(source, url));
+      } catch (RuntimeException e) {
+        log.error("RSS 뉴스 수집 실패: {}", source, e);
+      }
+    });
+
+    // 관심사와 일치하는 기사를 선별하고 저장한다.
+    return saveArticles(filterArticles(articles, interestKeywords));
   }
 }

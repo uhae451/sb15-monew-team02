@@ -318,4 +318,98 @@ class NewsCollectionServiceTest {
 
     assertEquals(0, result);
   }
+
+  // 뉴스 수집부터 관심사 필터링 및 저장까지 전체 흐름을 검증한다.
+  @Test
+  void 뉴스_수집부터_저장까지_정상적으로_수행한다() {
+
+    UUID interestId = UUID.randomUUID();
+
+    var item = new NaverNewsItem(
+        "Java 뉴스",
+        "https://example.com/news/1",
+        "https://example.com/naver/1",
+        "Spring 관련 기사",
+        "Thu, 26 Nov 2026 10:00:00 +0900"
+    );
+
+    when(naverNewsClient.isEnabled()).thenReturn(true);
+
+    when(naverNewsClient.search("Java"))
+        .thenReturn(new NaverNewsResponse(
+            "", 1, 1, 1, List.of(item)
+        ));
+
+    when(articleService.saveCollectedArticle(
+        any(ArticleCreateRequest.class), eq(Set.of(interestId))))
+        .thenReturn(true);
+
+    int result = service.collectAndSave(
+        Map.of(interestId, List.of("Java")),
+        Map.of()
+    );
+
+    assertEquals(1, result);
+
+    verify(articleService).saveCollectedArticle(
+        any(ArticleCreateRequest.class), eq(Set.of(interestId)));
+  }
+
+  // 네이버 뉴스 수집에 실패해도 RSS 수집과 저장을 계속 진행한다.
+  @Test
+  void 네이버_수집에_실패해도_RSS_수집을_계속한다() {
+
+    UUID interestId = UUID.randomUUID();
+
+    String source = "한국경제";
+    String url = "https://example.com/rss";
+
+    when(naverNewsClient.isEnabled()).thenReturn(true);
+
+    when(naverNewsClient.search("Java"))
+        .thenThrow(new RuntimeException("네이버 API 호출 실패"));
+
+    var rssItem = new RssNewsItem(
+        source,
+        "Java 뉴스",
+        "https://example.com/news/2",
+        "Java 관련 기사",
+        Instant.now()
+    );
+
+    when(rssNewsClient.fetch(source, url))
+        .thenReturn(List.of(rssItem));
+
+    when(articleService.saveCollectedArticle(
+        any(ArticleCreateRequest.class), eq(Set.of(interestId))))
+        .thenReturn(true);
+
+    int result = service.collectAndSave(
+        Map.of(interestId, List.of("Java")),
+        Map.of(source, url)
+    );
+
+    assertEquals(1, result);
+
+    verify(rssNewsClient).fetch(source, url);
+  }
+
+  // 등록된 관심사가 없으면 외부 뉴스 수집을 실행하지 않는다.
+  @Test
+  void 등록된_관심사가_없으면_뉴스를_수집하지_않는다() {
+
+    int result = service.collectAndSave(
+        Map.of(),
+        Map.of("한국경제", "https://example.com/rss")
+    );
+
+    assertEquals(0, result);
+
+    verifyNoInteractions(
+        naverNewsClient,
+        rssNewsClient,
+        articleService
+    );
+  }
+
 }
