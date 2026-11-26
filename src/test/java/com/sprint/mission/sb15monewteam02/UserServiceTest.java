@@ -228,4 +228,43 @@ class UserServiceTest {
                     .isInstanceOf(UserNotFoundException.class);
         }
     }
+
+    @Nested
+    @DisplayName("사용자 물리 삭제")
+    class HardDelete {
+        private final UUID userId = UUID.randomUUID();
+
+        @Test
+        @DisplayName("삭제하면 Repository에서 사용자를 지운다")
+        void success() {
+            User user = new User("test@example.com", "테스터", "password123");
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            userService.hardDelete(userId);
+
+            then(userRepository).should().delete(user);
+        }
+
+        @Test
+        @DisplayName("논리 삭제된 사용자도 물리 삭제할 수 있다")
+        void success_deletedUser() {
+            User user = new User("test@example.com", "테스터", "password123");
+            user.delete();
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            userService.hardDelete(userId);
+
+            then(userRepository).should().delete(user);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사용자면 UserNotFoundException이 발생하고 삭제하지 않는다")
+        void fail_userNotFound() {
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.hardDelete(userId))
+                    .isInstanceOf(UserNotFoundException.class);
+            then(userRepository).should(never()).delete(any());
+        }
+    }
 }

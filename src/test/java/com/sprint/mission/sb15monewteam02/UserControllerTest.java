@@ -285,4 +285,25 @@ class UserControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("USR_003"));
     }
+
+    @Test
+    @DisplayName("물리 삭제 성공 시 204 No Content를 반환한다")
+    void hardDelete_success() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/users/{userId}/hard", userId))
+                .andExpect(status().isNoContent());
+
+        then(userService).should().hardDelete(userId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자를 물리 삭제하면 404를 반환한다")
+    void hardDelete_fail_userNotFound() throws Exception {
+        willThrow(new UserNotFoundException()).given(userService).hardDelete(any());
+
+        mockMvc.perform(delete("/api/users/{userId}/hard", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USR_003"));
+    }
 }
