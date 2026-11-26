@@ -2,9 +2,11 @@ package com.sprint.mission.sb15monewteam02.user.service;
 
 import com.sprint.mission.sb15monewteam02.common.exception.DuplicateEmailException;
 import com.sprint.mission.sb15monewteam02.common.exception.InvalidCredentialsException;
+import com.sprint.mission.sb15monewteam02.common.exception.UserNotFoundException;
 import com.sprint.mission.sb15monewteam02.user.dto.UserCreateRequest;
 import com.sprint.mission.sb15monewteam02.user.dto.UserDto;
 import com.sprint.mission.sb15monewteam02.user.dto.UserLoginRequest;
+import com.sprint.mission.sb15monewteam02.user.dto.UserUpdateRequest;
 import com.sprint.mission.sb15monewteam02.user.entity.User;
 import com.sprint.mission.sb15monewteam02.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.sprint.mission.sb15monewteam02.common.exception.ErrorCode.DUPLICATE_EMAIL;
 
@@ -50,5 +53,18 @@ public class UserService {
             throw new InvalidCredentialsException();
         }
         return UserDto.from(user);
+    }
+    // 사용자 정보(닉네임) 수정
+    @Transactional
+    public UserDto update(UUID userId, UserUpdateRequest request) {
+        User user = findActiveUser(userId);
+        user.updateNickname(request.nickname());   // 변경 감지로 저장된다
+        return UserDto.from(user);
+    }
+    // 논리 삭제되지 않은 사용자 조회
+    private User findActiveUser(UUID userId) {
+        return userRepository.findById(userId)
+                .filter(user -> !user.isDeleted())
+                .orElseThrow(UserNotFoundException::new);
     }
 }
