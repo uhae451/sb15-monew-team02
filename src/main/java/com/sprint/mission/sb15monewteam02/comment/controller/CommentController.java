@@ -95,7 +95,7 @@ public class CommentController {
       @PathVariable UUID commentId,
       @RequestHeader(REQUEST_USER_HEADER) UUID requestUserId
   ) {
-    return ResponseEntity.status(HttpStatus.CREATED).body(commentService.likeComment(commentId, requestUserId));
+    return ResponseEntity.status(HttpStatus.OK).body(commentService.likeComment(commentId, requestUserId));
   }
 
   @Operation(summary = "댓글 좋아요 취소")
