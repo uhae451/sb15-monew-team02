@@ -1,4 +1,4 @@
-package com.sprint.mission.sb15monewteam02;
+package com.sprint.mission.sb15monewteam02.article.service;
 
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleSearchRequest;
@@ -13,7 +13,6 @@ import org.mockito.Mockito;
 
 import com.sprint.mission.sb15monewteam02.article.entity.Article;
 import com.sprint.mission.sb15monewteam02.article.repository.ArticleRepository;
-import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

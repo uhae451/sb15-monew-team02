@@ -1,5 +1,5 @@
 
-package com.sprint.mission.sb15monewteam02;
+package com.sprint.mission.sb15monewteam02.article.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.sprint.mission.sb15monewteam02.article.controller.ArticleController;
 import com.sprint.mission.sb15monewteam02.article.dto.*;
 import com.sprint.mission.sb15monewteam02.article.exception.ArticleNotFoundException;
 import com.sprint.mission.sb15monewteam02.article.service.ArticleService;

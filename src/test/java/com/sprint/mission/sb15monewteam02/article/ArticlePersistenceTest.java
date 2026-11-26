@@ -1,4 +1,4 @@
-package com.sprint.mission.sb15monewteam02;
+package com.sprint.mission.sb15monewteam02.article;
 
 import com.sprint.mission.sb15monewteam02.article.dto.*;
 import com.sprint.mission.sb15monewteam02.article.entity.*;
