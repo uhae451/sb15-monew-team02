@@ -35,4 +35,10 @@ public class UserController {
                                           @Valid @RequestBody UserUpdateRequest request) {
         return ResponseEntity.ok(userService.update(userId, request));
     }
+    //사용자 논리 삭제 api
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> softDelete(@PathVariable UUID userId) {
+        userService.softDelete(userId);
+        return ResponseEntity.noContent().build();
+    }
 }

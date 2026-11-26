@@ -61,6 +61,12 @@ public class UserService {
         user.updateNickname(request.nickname());   // 변경 감지로 저장된다
         return UserDto.from(user);
     }
+    // 사용자 논리 삭제
+    @Transactional
+    public void softDelete(UUID userId) {
+        User user = findActiveUser(userId);
+        user.delete();
+    }
     // 논리 삭제되지 않은 사용자 조회
     private User findActiveUser(UUID userId) {
         return userRepository.findById(userId)
