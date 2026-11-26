@@ -1,9 +1,11 @@
 package com.sprint.mission.sb15monewteam02;
 
 
+import com.sprint.mission.sb15monewteam02.common.exception.InvalidCredentialsException;
 import com.sprint.mission.sb15monewteam02.user.dto.UserCreateRequest;
 import com.sprint.mission.sb15monewteam02.user.dto.UserDto;
 import com.sprint.mission.sb15monewteam02.common.exception.DuplicateEmailException;
+import com.sprint.mission.sb15monewteam02.user.dto.UserLoginRequest;
 import com.sprint.mission.sb15monewteam02.user.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -110,7 +112,7 @@ class UserControllerTest {
     void create_fail_duplicateEmail() throws Exception {
         // given: Service가 중복 예외를 던진다고 가정
         given(userService.create(any(UserCreateRequest.class)))
-                .willThrow(new DuplicateEmailException(DUPLICATE_EMAIL));
+                .willThrow(new DuplicateEmailException());
 
         String body = """
                 {
@@ -164,5 +166,50 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
 
         then(userService).should(never()).create(any());
+    }
+
+    @Test
+    @DisplayName("로그인 성공 시 200 OK와 사용자 정보를 반환하고, 비밀번호는 응답에 없다")
+    void login_success() throws Exception {
+        UUID userId = UUID.randomUUID();
+        given(userService.login(any(UserLoginRequest.class)))
+                .willReturn(new UserDto(userId, "test@example.com", "테스터", Instant.now()));
+
+        mockMvc.perform(post("/api/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "email": "test@example.com", "password": "password123" }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("로그인 실패 시 401과 USR_002 코드를 반환한다")
+    void login_fail_invalidCredentials() throws Exception {
+        given(userService.login(any())).willThrow(new InvalidCredentialsException());
+
+        mockMvc.perform(post("/api/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "email": "test@example.com", "password": "wrong-pw" }
+                            """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("USR_002"));
+    }
+
+    @ParameterizedTest(name = "[{index}] email = \"{0}\"")
+    @ValueSource(strings = {"", "not-an-email"})
+    @DisplayName("로그인 이메일이 비어 있거나 형식이 잘못되면 400을 반환한다")
+    void login_fail_invalidEmail(String email) throws Exception {
+        mockMvc.perform(post("/api/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "email": "%s", "password": "password123" }
+                            """.formatted(email)))
+                .andExpect(status().isBadRequest());
+
+        then(userService).should(never()).login(any());
     }
 }
