@@ -25,9 +25,11 @@ import java.util.UUID;
 import static com.sprint.mission.sb15monewteam02.common.exception.ErrorCode.DUPLICATE_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -259,6 +261,27 @@ class UserControllerTest {
                         .content("""
                             { "nickname": "새닉네임" }
                             """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USR_003"));
+    }
+
+    @Test
+    @DisplayName("논리 삭제 성공 시 204 No Content를 반환한다")
+    void softDelete_success() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/users/{userId}", userId))
+                .andExpect(status().isNoContent());
+
+        then(userService).should().softDelete(userId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자를 논리 삭제하면 404를 반환한다")
+    void softDelete_fail_userNotFound() throws Exception {
+        willThrow(new UserNotFoundException()).given(userService).softDelete(any());
+
+        mockMvc.perform(delete("/api/users/{userId}", UUID.randomUUID()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("USR_003"));
     }

@@ -190,4 +190,42 @@ class UserServiceTest {
             assertThat(user.getNickname()).isEqualTo("테스터");
         }
     }
+
+    @Nested
+    @DisplayName("사용자 논리 삭제")
+    class SoftDelete {
+        private final UUID userId = UUID.randomUUID();
+
+        @Test
+        @DisplayName("삭제하면 deletedAt이 기록된다")
+        void success() {
+            User user = new User("test@example.com", "테스터", "password123");
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            userService.softDelete(userId);
+
+            assertThat(user.isDeleted()).isTrue();
+            then(userRepository).should(never()).delete(any());   // 행은 남아 있어야 한다
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사용자면 UserNotFoundException이 발생한다")
+        void fail_userNotFound() {
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.softDelete(userId))
+                    .isInstanceOf(UserNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("이미 논리 삭제된 사용자면 UserNotFoundException이 발생한다")
+        void fail_alreadyDeleted() {
+            User user = new User("test@example.com", "테스터", "password123");
+            user.delete();
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> userService.softDelete(userId))
+                    .isInstanceOf(UserNotFoundException.class);
+        }
+    }
 }
