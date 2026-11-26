@@ -11,6 +11,8 @@ import com.sprint.mission.sb15monewteam02.article.collection.dto.RssNewsItem;
 import com.sprint.mission.sb15monewteam02.article.collection.filter.NewsKeywordFilter;
 import com.sprint.mission.sb15monewteam02.article.collection.mapper.NewsArticleMapper;
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
+import com.sprint.mission.sb15monewteam02.article.collection.dto.MatchedNewsArticle;
+import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -26,12 +28,16 @@ class NewsCollectionServiceTest {
   private final RssNewsClient rssNewsClient =
       mock(RssNewsClient.class);
 
+  private final ArticleService articleService =
+      mock(ArticleService.class);
+
   private final NewsCollectionService service =
       new NewsCollectionService(
           naverNewsClient,
           rssNewsClient,
           new NewsArticleMapper(),
-          new NewsKeywordFilter()
+          new NewsKeywordFilter(),
+          articleService
       );
 
   @Test
@@ -183,5 +189,70 @@ class NewsCollectionServiceTest {
     );
 
     assertTrue(result.isEmpty());
+  }
+
+  // 신규 기사 저장 및 저장 건수 반환을 검증한다.
+  @Test
+  void 신규_기사를_저장하고_저장_건수를_반환한다() {
+
+    var article = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java 뉴스",
+        Instant.now(),
+        "Spring 관련 기사"
+    );
+
+    Set<UUID> interestIds = Set.of(UUID.randomUUID());
+
+    var matched = new MatchedNewsArticle(article, interestIds);
+
+    when(articleService.saveCollectedArticle(article, interestIds))
+        .thenReturn(true);
+
+    int result = service.saveArticles(List.of(matched));
+
+    assertEquals(1, result);
+
+    verify(articleService)
+        .saveCollectedArticle(article, interestIds);
+  }
+
+  // 중복 기사는 신규 저장 건수에 포함하지 않는다.
+  @Test
+  void 중복_기사는_저장_건수에_포함하지_않는다() {
+
+    var article = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java 뉴스",
+        Instant.now(),
+        "Spring 관련 기사"
+    );
+
+    Set<UUID> interestIds = Set.of(UUID.randomUUID());
+
+    var matched = new MatchedNewsArticle(article, interestIds);
+
+    when(articleService.saveCollectedArticle(article, interestIds))
+        .thenReturn(false);
+
+    int result = service.saveArticles(List.of(matched));
+
+    assertEquals(0, result);
+
+    verify(articleService)
+        .saveCollectedArticle(article, interestIds);
+  }
+
+  // 저장 대상 기사가 없으면 저장 서비스를 호출하지 않는다.
+  @Test
+  void 저장할_기사가_없으면_저장하지_않는다() {
+
+    int result = service.saveArticles(List.of());
+
+    assertEquals(0, result);
+
+    verifyNoInteractions(articleService);
   }
 }

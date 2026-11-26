@@ -6,6 +6,7 @@ import com.sprint.mission.sb15monewteam02.article.collection.dto.MatchedNewsArti
 import com.sprint.mission.sb15monewteam02.article.collection.filter.NewsKeywordFilter;
 import com.sprint.mission.sb15monewteam02.article.collection.mapper.NewsArticleMapper;
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
+import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,6 +21,7 @@ public class NewsCollectionService {
   private final RssNewsClient rssNewsClient;
   private final NewsArticleMapper newsArticleMapper;
   private final NewsKeywordFilter newsKeywordFilter;
+  private final ArticleService articleService;
 
   // 네이버 API를 통해 키워드에 해당하는 뉴스를 수집하고 기사 등록 DTO로 변환한다.
   public List<ArticleCreateRequest> collectNaver(String keyword) {
@@ -59,5 +61,25 @@ public class NewsCollectionService {
         ))
         .filter(matched -> !matched.interestIds().isEmpty())
         .toList();
+  }
+
+  // 관심사 필터링을 통과한 기사를 저장하고 신규 저장 건수를 반환한다.
+  public int saveArticles(List<MatchedNewsArticle> articles) {
+
+    int savedCount = 0;
+
+    for (MatchedNewsArticle matched : articles) {
+
+      boolean saved = articleService.saveCollectedArticle(
+          matched.article(),
+          matched.interestIds()
+      );
+
+      if (saved) {
+        savedCount++;
+      }
+    }
+
+    return savedCount;
   }
 }
