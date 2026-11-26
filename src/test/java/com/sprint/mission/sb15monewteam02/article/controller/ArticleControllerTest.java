@@ -238,7 +238,8 @@ class ArticleControllerTest {
     mockMvc.perform(get("/api/articles/{id}", articleId)
             .header(userHeader, userId.toString()))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.message").isString());
+        .andExpect(jsonPath("$.code").value("ART_001"))
+        .andExpect(jsonPath("$.message").value("기사를 찾을 수 없습니다."));
   }
 
   // 7. 뉴스 출처 목록
@@ -320,5 +321,52 @@ class ArticleControllerTest {
         .andExpect(status().isNoContent());
 
     verify(articleService).hardDelete(articleId);
+  }
+
+  // 12. 기사 목록 조회 시 필수 헤더 누락 검증
+  @Test
+  void 기사_목록_조회시_사용자_ID가_없으면_400을_반환한다() throws Exception {
+
+    mockMvc.perform(get("/api/articles"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("CMN_400"));
+
+    verifyNoInteractions(articleService);
+  }
+
+  // 13. 기사 상세 조회 시 필수 헤더 누락 검증
+  @Test
+  void 기사_상세_조회시_사용자_ID가_없으면_400을_반환한다() throws Exception {
+
+    mockMvc.perform(get("/api/articles/{id}", articleId))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("CMN_400"));
+
+    verifyNoInteractions(articleService);
+  }
+
+  // 14. 잘못된 사용자 UUID 검증
+  @Test
+  void 사용자_ID_형식이_잘못되면_400을_반환한다() throws Exception {
+
+    mockMvc.perform(get("/api/articles")
+            .header(userHeader, "invalid-uuid"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("CMN_400"));
+
+    verifyNoInteractions(articleService);
+  }
+
+  // 15. 잘못된 날짜 형식 검증
+  @Test
+  void 날짜_형식이_잘못되면_400을_반환한다() throws Exception {
+
+    mockMvc.perform(get("/api/articles")
+            .header(userHeader, userId.toString())
+            .param("publishDateFrom", "invalid-date"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("CMN_400"));
+
+    verifyNoInteractions(articleService);
   }
 }

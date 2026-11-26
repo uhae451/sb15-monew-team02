@@ -6,7 +6,6 @@ import com.sprint.mission.sb15monewteam02.article.dto.ArticlePage;
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleResponse;
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleSearchRequest;
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleViewResponse;
-import com.sprint.mission.sb15monewteam02.article.exception.ArticleNotFoundException;
 import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
 
 import java.time.Instant;
@@ -14,12 +13,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -71,10 +68,7 @@ public class ArticleController {
   @GetMapping("/{articleId}")
   public ResponseEntity<ArticleResponse> getArticle(
       @PathVariable UUID articleId,
-      @RequestHeader(
-          value = "Monew-Request-User-ID",
-          required = false
-      ) UUID userId
+      @RequestHeader("Monew-Request-User-ID") UUID userId
   ) {
 
     return ResponseEntity.ok(
@@ -125,40 +119,8 @@ public class ArticleController {
     return ResponseEntity.noContent().build();
   }
 
-  // 7. 존재하지 않는 기사 예외 처리
-  @ExceptionHandler(ArticleNotFoundException.class)
-  public ResponseEntity<Map<String, String>> handleNotFound(
-      ArticleNotFoundException exception
-  ) {
 
-    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-        .body(Map.of(
-            "message",
-            exception.getMessage() == null
-                ? "기사를 찾을 수 없습니다."
-                : exception.getMessage()
-        ));
-  }
-
-  // 8. 잘못된 요청 예외 처리
-  @ExceptionHandler({
-      IllegalArgumentException.class,
-      DateTimeParseException.class
-  })
-  public ResponseEntity<Map<String, String>> handleBadRequest(
-      RuntimeException exception
-  ) {
-
-    return ResponseEntity.badRequest()
-        .body(Map.of(
-            "message",
-            exception.getMessage() == null
-                ? "잘못된 요청입니다."
-                : exception.getMessage()
-        ));
-  }
-
-  // 9. 프론트엔드 날짜 형식 변환
+  // 7. 프론트엔드 날짜 형식 변환
   private Instant parseDate(String value) {
 
     if (value == null || value.isBlank()) {
