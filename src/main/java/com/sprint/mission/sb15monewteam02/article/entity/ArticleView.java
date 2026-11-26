@@ -17,7 +17,7 @@ public class ArticleView {
   private Article article;
   @Column(name = "user_id", nullable = false)
   private UUID userId;
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TIMESTAMPTZ")
   private Instant createdAt;
   protected ArticleView() {}
   public ArticleView(Article article, UUID userId) {
