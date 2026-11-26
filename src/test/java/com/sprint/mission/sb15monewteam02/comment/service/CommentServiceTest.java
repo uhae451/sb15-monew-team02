@@ -248,7 +248,7 @@ class CommentServiceTest {
 
     given(commentRepository.findByIdAndDeletedFalse(commentId)).willReturn(Optional.of(comment));
 
-    commentService.softDeleteComment(commentId, authorId);
+    commentService.softDeleteComment(commentId);
 
     assertThat(comment.isDeleted()).isTrue();
     assertThat(comment.getDeletedAt()).isNotNull();
@@ -368,7 +368,7 @@ class CommentServiceTest {
 
     assertThatThrownBy(() -> commentService.updateComment(commentId, userId, new UpdateCommentRequest("수정")))
         .isInstanceOf(CommentNotFoundException.class);
-    assertThatThrownBy(() -> commentService.softDeleteComment(commentId, userId))
+    assertThatThrownBy(() -> commentService.softDeleteComment(commentId))
         .isInstanceOf(CommentNotFoundException.class);
     assertThatThrownBy(() -> commentService.hardDeleteComment(commentId))
         .isInstanceOf(CommentNotFoundException.class);
@@ -402,20 +402,5 @@ class CommentServiceTest {
     assertThat(page.hasNext()).isTrue();
     assertThat(page.nextCursor()).isEqualTo(t1.toString());
     assertThat(page.nextAfter()).isEqualTo(t1.toString());
-  }
-
-  @Test
-  @DisplayName("타인이 댓글 논리 삭제를 시도하면 CommentForbiddenException이 발생한다")
-  void softDeleteByNonAuthorThrowsForbidden() {
-    UUID commentId = UUID.randomUUID();
-    UUID authorId = UUID.randomUUID();
-    UUID otherUserId = UUID.randomUUID();
-    Comment comment = Comment.createWithMetrics(UUID.randomUUID(), authorId, "댓글", 0L, Instant.now());
-    ReflectionTestUtils.setField(comment, "id", commentId);
-
-    given(commentRepository.findByIdAndDeletedFalse(commentId)).willReturn(Optional.of(comment));
-
-    assertThatThrownBy(() -> commentService.softDeleteComment(commentId, otherUserId))
-        .isInstanceOf(CommentForbiddenException.class);
   }
 }

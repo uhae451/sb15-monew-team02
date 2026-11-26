@@ -182,7 +182,7 @@ class CommentLikeConcurrencyTest {
     );
     commentService.likeComment(comment.getId(), likerId);
 
-    commentService.softDeleteComment(comment.getId(), authorId);
+    commentService.softDeleteComment(comment.getId());
     assertThat(commentRepository.findById(comment.getId())).isPresent();
     assertThat(commentRepository.findByIdAndDeletedFalse(comment.getId())).isEmpty();
     assertThat(commentLikeRepository.existsByCommentIdAndUserId(comment.getId(), likerId)).isTrue();

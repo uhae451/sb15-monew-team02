@@ -77,11 +77,8 @@ public class CommentController {
 
   @Operation(summary = "댓글 논리 삭제")
   @DeleteMapping("/{commentId}")
-  public ResponseEntity<Void> softDeleteComment(
-      @PathVariable UUID commentId,
-      @RequestHeader(value = REQUEST_USER_HEADER, required = false) UUID requestUserId
-  ) {
-    commentService.softDeleteComment(commentId, requestUserId);
+  public ResponseEntity<Void> softDeleteComment(@PathVariable UUID commentId) {
+    commentService.softDeleteComment(commentId);
     return ResponseEntity.noContent().build();
   }
 

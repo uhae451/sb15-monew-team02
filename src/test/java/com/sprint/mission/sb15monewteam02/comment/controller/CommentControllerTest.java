@@ -4,7 +4,6 @@ import com.sprint.mission.sb15monewteam02.comment.dto.CommentLikeResponse;
 import com.sprint.mission.sb15monewteam02.comment.dto.CommentResponse;
 import com.sprint.mission.sb15monewteam02.comment.dto.CreateCommentRequest;
 import com.sprint.mission.sb15monewteam02.comment.dto.UpdateCommentRequest;
-import com.sprint.mission.sb15monewteam02.comment.entity.CommentOrderBy;
 import com.sprint.mission.sb15monewteam02.comment.exception.CommentForbiddenException;
 import com.sprint.mission.sb15monewteam02.comment.exception.CommentLikeNotFoundException;
 import com.sprint.mission.sb15monewteam02.comment.exception.DuplicateCommentLikeException;
@@ -173,7 +172,7 @@ class CommentControllerTest {
   @DisplayName("DELETE /api/comments/{commentId} 및 /hard - 논리·물리 삭제 시 204를 반환한다")
   void deleteCommentSoftAndHard() throws Exception {
     UUID commentId = UUID.randomUUID();
-    willDoNothing().given(commentService).softDeleteComment(commentId, null);
+    willDoNothing().given(commentService).softDeleteComment(commentId);
     willDoNothing().given(commentService).hardDeleteComment(commentId);
 
     mockMvc.perform(delete("/api/comments/{commentId}", commentId))

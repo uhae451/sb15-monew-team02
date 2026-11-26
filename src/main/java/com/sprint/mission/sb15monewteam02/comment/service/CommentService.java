@@ -142,11 +142,8 @@ public class CommentService {
   }
 
   @Transactional
-  public void softDeleteComment(UUID commentId, UUID requestUserId) {
+  public void softDeleteComment(UUID commentId) {
     Comment comment = findActiveComment(commentId);
-    if (requestUserId != null) {
-      validateAuthor(comment, requestUserId);
-    }
 
     comment.softDelete();
 
