@@ -16,7 +16,6 @@ public enum ErrorCode {
   INVALID_INPUT("CMN_400","입력값이 올바르지 않습니다.",HttpStatus.BAD_REQUEST),
   INVALID_CREDENTIALS("USR_002", "이메일 또는 비밀번호가 올바르지 않습니다.", HttpStatus.UNAUTHORIZED),
   // 공통(CMN)
-  INVALID_INPUT_VALUE("CMN_001", "입력값이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
   INVALID_TYPE_VALUE("CMN_002", "요청 파라미터 타입이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
   MISSING_REQUEST_HEADER("CMN_003", "필수 요청 헤더가 누락되었습니다.", HttpStatus.BAD_REQUEST),
   MISSING_REQUEST_PARAMETER("CMN_004", "필수 요청 파라미터가 누락되었습니다.", HttpStatus.BAD_REQUEST),

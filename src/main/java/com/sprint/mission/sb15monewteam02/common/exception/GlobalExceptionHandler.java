@@ -5,7 +5,6 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -25,29 +24,24 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
-    return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_INPUT));
-  }
-
-  @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
       MethodArgumentNotValidException exception) {
     log.warn("요청 본문 유효성 검증에 실패했습니다: {}", exception.getBindingResult().getFieldErrors());
-    return badRequest(ErrorCode.INVALID_INPUT_VALUE);
+    return badRequest(ErrorCode.INVALID_INPUT);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
   public ResponseEntity<ErrorResponse> handleConstraintViolation(
       ConstraintViolationException exception) {
     log.warn("요청 파라미터 유효성 검증에 실패했습니다: {}", exception.getConstraintViolations());
-    return badRequest(ErrorCode.INVALID_INPUT_VALUE);
+    return badRequest(ErrorCode.INVALID_INPUT);
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
       HttpMessageNotReadableException exception) {
     log.warn("요청 본문을 읽을 수 없습니다: {}", exception.getMessage());
-    return badRequest(ErrorCode.INVALID_INPUT_VALUE);
+    return badRequest(ErrorCode.INVALID_INPUT);
   }
 
   @ExceptionHandler(MissingRequestHeaderException.class)
