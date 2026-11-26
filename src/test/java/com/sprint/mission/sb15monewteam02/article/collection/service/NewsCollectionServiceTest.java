@@ -8,9 +8,14 @@ import com.sprint.mission.sb15monewteam02.article.collection.client.RssNewsClien
 import com.sprint.mission.sb15monewteam02.article.collection.dto.NaverNewsItem;
 import com.sprint.mission.sb15monewteam02.article.collection.dto.NaverNewsResponse;
 import com.sprint.mission.sb15monewteam02.article.collection.dto.RssNewsItem;
+import com.sprint.mission.sb15monewteam02.article.collection.filter.NewsKeywordFilter;
 import com.sprint.mission.sb15monewteam02.article.collection.mapper.NewsArticleMapper;
+import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class NewsCollectionServiceTest {
@@ -25,7 +30,8 @@ class NewsCollectionServiceTest {
       new NewsCollectionService(
           naverNewsClient,
           rssNewsClient,
-          new NewsArticleMapper()
+          new NewsArticleMapper(),
+          new NewsKeywordFilter()
       );
 
   @Test
@@ -95,5 +101,87 @@ class NewsCollectionServiceTest {
     assertEquals(1, result.size());
     assertEquals(source, result.get(0).source());
     assertEquals("Java 뉴스", result.get(0).title());
+  }
+
+  // 관심사 키워드와 일치하는 기사만 선별하는지 검증한다.
+  @Test
+  void 관심사와_일치하는_기사만_반환한다() {
+
+    UUID interestId = UUID.randomUUID();
+
+    var javaArticle = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java 뉴스",
+        Instant.now(),
+        "백엔드 기술 소식"
+    );
+
+    var economyArticle = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/2",
+        "경제 뉴스",
+        Instant.now(),
+        "금리 상승"
+    );
+
+    var result = service.filterArticles(
+        List.of(javaArticle, economyArticle),
+        Map.of(interestId, List.of("Java"))
+    );
+
+    assertEquals(1, result.size());
+    assertEquals(javaArticle, result.get(0).article());
+    assertEquals(Set.of(interestId), result.get(0).interestIds());
+  }
+
+  // 하나의 기사에 여러 관심사 ID가 연결되는지 검증한다.
+  @Test
+  void 하나의_기사에_여러_관심사를_연결한다() {
+
+    UUID backendId = UUID.randomUUID();
+    UUID programmingId = UUID.randomUUID();
+
+    var article = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java와 Spring 뉴스",
+        Instant.now(),
+        "개발 기술 소식"
+    );
+
+    var result = service.filterArticles(
+        List.of(article),
+        Map.of(
+            backendId, List.of("Spring"),
+            programmingId, List.of("Java")
+        )
+    );
+
+    assertEquals(1, result.size());
+    assertEquals(
+        Set.of(backendId, programmingId),
+        result.get(0).interestIds()
+    );
+  }
+
+  // 등록된 관심사가 없으면 기사를 선별하지 않는다.
+  @Test
+  void 등록된_관심사가_없으면_빈_리스트를_반환한다() {
+
+    var article = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java 뉴스",
+        Instant.now(),
+        "기술 소식"
+    );
+
+    var result = service.filterArticles(
+        List.of(article),
+        Map.of()
+    );
+
+    assertTrue(result.isEmpty());
   }
 }
