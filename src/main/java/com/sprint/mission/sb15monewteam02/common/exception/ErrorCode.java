@@ -15,6 +15,9 @@ public enum ErrorCode {
   DUPLICATE_EMAIL("USR_001","이미 가입된 이메일입니다.",HttpStatus.CONFLICT),
   INVALID_INPUT("CMN_400","입력값이 올바르지 않습니다.",HttpStatus.BAD_REQUEST),
   INVALID_CREDENTIALS("USR_002", "이메일 또는 비밀번호가 올바르지 않습니다.", HttpStatus.UNAUTHORIZED),
+  // 기사 관련 예외 코드
+  ARTICLE_NOT_FOUND("ART_001", "기사를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  DUPLICATE_ARTICLE("ART_002", "이미 등록된 기사입니다.", HttpStatus.CONFLICT),
   ;
 
 

@@ -37,7 +37,7 @@ public class Article {
   @Column(nullable = false, columnDefinition = "text")
   private String title;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TIMESTAMPTZ")
   private Instant publishDate;
 
   @Column(nullable = false, columnDefinition = "text")

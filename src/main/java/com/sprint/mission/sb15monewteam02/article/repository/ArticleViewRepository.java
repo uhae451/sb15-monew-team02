@@ -1,6 +1,7 @@
 package com.sprint.mission.sb15monewteam02.article.repository;
 
 import com.sprint.mission.sb15monewteam02.article.entity.ArticleView;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -15,4 +16,7 @@ public interface ArticleViewRepository extends JpaRepository<ArticleView, UUID> 
   @Modifying
   @Query("delete from ArticleView v where v.article.id = :articleId")
   void deleteAllByArticleId(@Param("articleId") UUID articleId);
+  Optional<ArticleView> findByArticleIdAndUserId(
+      UUID articleId, UUID userId
+  );
 }
