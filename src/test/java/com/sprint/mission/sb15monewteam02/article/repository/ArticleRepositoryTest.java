@@ -1,7 +1,6 @@
-package com.sprint.mission.sb15monewteam02;
+package com.sprint.mission.sb15monewteam02.article.repository;
 
 import com.sprint.mission.sb15monewteam02.article.entity.Article;
-import com.sprint.mission.sb15monewteam02.article.repository.ArticleRepository;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
