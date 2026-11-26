@@ -23,7 +23,7 @@ public class UserService {
     //사용자 회원 가입 서비스 구현
     @Transactional
     public UserDto create(UserCreateRequest request){
-
+        // 이미 있는 이메일일 때 예외처리
         if (userRepository.existsByEmail(request.email())){
             throw new DuplicateEmailException();
         }
