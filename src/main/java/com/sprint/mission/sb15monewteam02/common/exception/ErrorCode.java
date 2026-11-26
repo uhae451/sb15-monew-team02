@@ -11,13 +11,16 @@ public enum ErrorCode {
   // 예시
   //   MEMBER_NOT_FOUND("MEM_001","회원을 찾을 수 없습니다.",HttpStatus.NOT_FOUND)
 
+  INTERNAL_ERROR("CMN_999","서버에 문제가 발생했습니다",HttpStatus.INTERNAL_SERVER_ERROR),
+  DUPLICATE_EMAIL("USR_001","이미 가입된 이메일입니다.",HttpStatus.CONFLICT),
+  INVALID_INPUT("CMN_400","입력값이 올바르지 않습니다.",HttpStatus.BAD_REQUEST),
+  INVALID_CREDENTIALS("USR_002", "이메일 또는 비밀번호가 올바르지 않습니다.", HttpStatus.UNAUTHORIZED),
   // 공통(CMN)
   INVALID_INPUT_VALUE("CMN_001", "입력값이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
   INVALID_TYPE_VALUE("CMN_002", "요청 파라미터 타입이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
   MISSING_REQUEST_HEADER("CMN_003", "필수 요청 헤더가 누락되었습니다.", HttpStatus.BAD_REQUEST),
   MISSING_REQUEST_PARAMETER("CMN_004", "필수 요청 파라미터가 누락되었습니다.", HttpStatus.BAD_REQUEST),
   INVALID_CURSOR("CMN_005", "유효하지 않은 커서 형식입니다.", HttpStatus.BAD_REQUEST),
-  INTERNAL_ERROR("CMN_999", "서버에 문제가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 사용자(USR)
   USER_NOT_FOUND("USR_003", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
@@ -31,6 +34,8 @@ public enum ErrorCode {
   DUPLICATE_COMMENT_LIKE("CMT_003", "이미 좋아요를 누른 댓글입니다.", HttpStatus.CONFLICT),
   COMMENT_LIKE_NOT_FOUND("CMT_004", "좋아요 내역을 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
   ;
+
+
 
   private final String code;
 
