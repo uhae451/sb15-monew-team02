@@ -2,9 +2,9 @@ spring:
   application:
     name: sb15-monew-team02
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:1234}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: create
