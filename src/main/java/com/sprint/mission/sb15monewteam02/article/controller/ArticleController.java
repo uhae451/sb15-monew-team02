@@ -46,10 +46,7 @@ public class ArticleController {
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) String after,
       @RequestParam(defaultValue = "10") int limit,
-      @RequestHeader(
-          value = "Monew-Request-User-ID",
-          required = false
-      ) UUID userId
+      @RequestHeader("Monew-Request-User-ID") UUID userId
   ) {
 
     ArticleSearchRequest request = new ArticleSearchRequest(
