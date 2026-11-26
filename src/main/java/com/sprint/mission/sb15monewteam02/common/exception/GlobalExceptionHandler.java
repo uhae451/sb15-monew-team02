@@ -24,54 +24,53 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
+  public ResponseEntity<ErrorResponse> handleValidation(
       MethodArgumentNotValidException exception) {
     log.warn("요청 본문 유효성 검증에 실패했습니다: {}", exception.getBindingResult().getFieldErrors());
-    return badRequest(ErrorCode.INVALID_INPUT);
+    return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_INPUT));
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
   public ResponseEntity<ErrorResponse> handleConstraintViolation(
       ConstraintViolationException exception) {
     log.warn("요청 파라미터 유효성 검증에 실패했습니다: {}", exception.getConstraintViolations());
-    return badRequest(ErrorCode.INVALID_INPUT);
+    return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_INPUT));
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
       HttpMessageNotReadableException exception) {
     log.warn("요청 본문을 읽을 수 없습니다: {}", exception.getMessage());
-    return badRequest(ErrorCode.INVALID_INPUT);
+    return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_INPUT));
   }
 
   @ExceptionHandler(MissingRequestHeaderException.class)
   public ResponseEntity<ErrorResponse> handleMissingRequestHeader(
       MissingRequestHeaderException exception) {
     log.warn("필수 요청 헤더가 누락되었습니다: {}", exception.getHeaderName());
-    return badRequest(ErrorCode.MISSING_REQUEST_HEADER);
+    return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.MISSING_REQUEST_HEADER));
+    // badRequest(ErrorCode.MISSING_REQUEST_HEADER);
   }
 
   @ExceptionHandler(MissingServletRequestParameterException.class)
   public ResponseEntity<ErrorResponse> handleMissingRequestParameter(
       MissingServletRequestParameterException exception) {
     log.warn("필수 요청 파라미터가 누락되었습니다: {}", exception.getParameterName());
-    return badRequest(ErrorCode.MISSING_REQUEST_PARAMETER);
+    return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.MISSING_REQUEST_PARAMETER));
+    // badRequest(ErrorCode.MISSING_REQUEST_PARAMETER);
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   public ResponseEntity<ErrorResponse> handleTypeMismatch(
       MethodArgumentTypeMismatchException exception) {
     log.warn("요청 파라미터 타입이 올바르지 않습니다: {}={}", exception.getName(), exception.getValue());
-    return badRequest(ErrorCode.INVALID_TYPE_VALUE);
+    return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_TYPE_VALUE));
+    //badRequest(ErrorCode.INVALID_TYPE_VALUE);
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleUnexpected(Exception e) {
     log.error("예상하지 못한 예외가 발생했습니다", e);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ErrorResponse.of(ErrorCode.INTERNAL_ERROR));
-  }
-
-  private ResponseEntity<ErrorResponse> badRequest(ErrorCode errorCode) {
-    return ResponseEntity.status(errorCode.getHttpStatus()).body(ErrorResponse.of(errorCode));
   }
 }
