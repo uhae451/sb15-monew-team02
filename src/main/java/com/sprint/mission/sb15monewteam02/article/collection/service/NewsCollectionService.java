@@ -1,0 +1,133 @@
+package com.sprint.mission.sb15monewteam02.article.collection.service;
+
+import com.sprint.mission.sb15monewteam02.article.collection.client.NaverNewsClient;
+import com.sprint.mission.sb15monewteam02.article.collection.client.RssNewsClient;
+import com.sprint.mission.sb15monewteam02.article.collection.dto.MatchedNewsArticle;
+import com.sprint.mission.sb15monewteam02.article.collection.filter.NewsKeywordFilter;
+import com.sprint.mission.sb15monewteam02.article.collection.mapper.NewsArticleMapper;
+import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
+import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class NewsCollectionService {
+
+  private final NaverNewsClient naverNewsClient;
+  private final RssNewsClient rssNewsClient;
+  private final NewsArticleMapper newsArticleMapper;
+  private final NewsKeywordFilter newsKeywordFilter;
+  private final ArticleService articleService;
+
+  // 네이버 API를 통해 키워드에 해당하는 뉴스를 수집하고 기사 등록 DTO로 변환한다.
+  public List<ArticleCreateRequest> collectNaver(String keyword) {
+
+    // API 인증키가 없는 팀원도 다른 기능을 정상적으로 사용할 수 있도록 네이버 뉴스 수집만 건너뛴다.
+    if (!naverNewsClient.isEnabled()) {
+      return List.of();
+    }
+
+    return naverNewsClient.search(keyword)
+        .items()
+        .stream()
+        .map(newsArticleMapper::fromNaver)
+        .toList();
+  }
+
+  // 언론사의 RSS 주소를 통해 뉴스를 수집하고 기사 등록 DTO로 변환한다.
+  public List<ArticleCreateRequest> collectRss(
+      String source, String rssUrl) {
+
+    return rssNewsClient.fetch(source, rssUrl)
+        .stream()
+        .map(newsArticleMapper::fromRss)
+        .toList();
+  }
+
+  // 관심사 키워드와 일치하는 기사만 선별하고 관심사 ID를 연결한다.
+  public List<MatchedNewsArticle> filterArticles(
+      List<ArticleCreateRequest> articles,
+      Map<UUID, List<String>> interestKeywords) {
+
+    return articles.stream()
+        .map(article -> new MatchedNewsArticle(
+            article,
+            newsKeywordFilter.findMatchingInterestIds(
+                article, interestKeywords)
+        ))
+        .filter(matched -> !matched.interestIds().isEmpty())
+        .toList();
+  }
+
+  // 개별 기사 저장 실패를 기록하고 나머지 기사의 저장을 계속 진행한다.
+  public int saveArticles(List<MatchedNewsArticle> articles) {
+
+    int savedCount = 0;
+
+    for (MatchedNewsArticle matched : articles) {
+
+      try {
+        boolean saved = articleService.saveCollectedArticle(
+            matched.article(),
+            matched.interestIds()
+        );
+
+        if (saved) {
+          savedCount++;
+        }
+
+      } catch (RuntimeException e) {
+        log.error("뉴스 기사 저장 실패: {}",
+            matched.article().sourceUrl(), e);
+      }
+    }
+
+    return savedCount;
+  }
+
+  // 뉴스 수집, 관심사 필터링, 기사 저장을 순차적으로 수행한다.
+  public int collectAndSave(
+      Map<UUID, List<String>> interestKeywords,
+      Map<String, String> rssSources) {
+
+    // 등록된 관심사가 없으면 뉴스 수집을 진행하지 않는다.
+    if (interestKeywords.isEmpty()) {
+      return 0;
+    }
+
+    List<ArticleCreateRequest> articles = new ArrayList<>();
+
+    // 중복 키워드를 제거하고 네이버 뉴스를 수집한다.
+    interestKeywords.values().stream()
+        .flatMap(List::stream)
+        .filter(keyword -> keyword != null && !keyword.isBlank())
+        .map(String::trim)
+        .distinct()
+        .forEach(keyword -> {
+          try {
+            articles.addAll(collectNaver(keyword));
+          } catch (RuntimeException e) {
+            log.error("네이버 뉴스 수집 실패: {}", keyword, e);
+          }
+        });
+
+    // 언론사별 RSS 뉴스를 수집한다.
+    rssSources.forEach((source, url) -> {
+      try {
+        articles.addAll(collectRss(source, url));
+      } catch (RuntimeException e) {
+        log.error("RSS 뉴스 수집 실패: {}", source, e);
+      }
+    });
+
+    // 관심사와 일치하는 기사를 선별하고 저장한다.
+    return saveArticles(filterArticles(articles, interestKeywords));
+  }
+}

@@ -23,6 +23,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/monew_db
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
+      # 네이버 뉴스 API연동
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+      NAVER_NEWS_URL: ${NAVER_NEWS_URL}
     ports:
       - "8080:8080"
     depends_on:

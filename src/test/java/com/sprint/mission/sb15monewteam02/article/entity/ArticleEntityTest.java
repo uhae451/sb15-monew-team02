@@ -1,6 +1,5 @@
-package com.sprint.mission.sb15monewteam02;
+package com.sprint.mission.sb15monewteam02.article.entity;
 
-import com.sprint.mission.sb15monewteam02.article.entity.Article;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
