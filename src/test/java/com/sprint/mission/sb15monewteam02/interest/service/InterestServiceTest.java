@@ -1,4 +1,4 @@
-package com.sprint.mission.sb15monewteam02.common.interest.service;
+package com.sprint.mission.sb15monewteam02.interest.service;
 
 import com.sprint.mission.sb15monewteam02.common.exception.InterestKeywordEmptyException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;

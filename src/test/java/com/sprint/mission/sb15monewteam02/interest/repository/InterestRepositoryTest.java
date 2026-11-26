@@ -1,4 +1,4 @@
-package com.sprint.mission.sb15monewteam02.common.interest.repository;
+package com.sprint.mission.sb15monewteam02.interest.repository;
 
 import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestRepository;

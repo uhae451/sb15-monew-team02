@@ -1,4 +1,4 @@
-package com.sprint.mission.sb15monewteam02.common.interest.controller;
+package com.sprint.mission.sb15monewteam02.interest.controller;
 
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
