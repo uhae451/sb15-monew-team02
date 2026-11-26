@@ -122,7 +122,7 @@ Naver News API와 한국경제·조선일보·연합뉴스 RSS를 통합하는 �
 
 ### 3번 뉴스 기사 및 뉴스 수집
 
-담당자: (TODO: 이름 / GitHub)
+담당자: 최주영 | [ohkr1123-commits](https://github.com/ohkr1123-commits)
 
 | Method | 경로 | 기능 |
 | --- | --- | --- |
@@ -141,6 +141,7 @@ Naver News API와 한국경제·조선일보·연합뉴스 RSS를 통합하는 �
 ### 4번 댓글 및 좋아요
 
 담당자: (TODO: 이름 / GitHub)
+
 
 | Method | 경로 | 기능 |
 | --- | --- | --- |
