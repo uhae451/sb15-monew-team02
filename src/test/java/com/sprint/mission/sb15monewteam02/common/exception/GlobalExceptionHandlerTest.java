@@ -57,8 +57,8 @@ class GlobalExceptionHandlerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"content\":\"\"}"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
-        .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()));
+        .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT.getCode()))
+        .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT.getMessage()));
   }
 
   @Test
@@ -92,7 +92,7 @@ class GlobalExceptionHandlerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{invalid-json"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()));
+        .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT.getCode()));
   }
 
   @Test
