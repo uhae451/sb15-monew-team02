@@ -49,7 +49,6 @@ public class GlobalExceptionHandler {
       MissingRequestHeaderException exception) {
     log.warn("필수 요청 헤더가 누락되었습니다: {}", exception.getHeaderName());
     return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.MISSING_REQUEST_HEADER));
-    // badRequest(ErrorCode.MISSING_REQUEST_HEADER);
   }
 
   @ExceptionHandler(MissingServletRequestParameterException.class)
