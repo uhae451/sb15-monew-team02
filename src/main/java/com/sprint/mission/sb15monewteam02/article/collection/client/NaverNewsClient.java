@@ -4,11 +4,13 @@ import com.sprint.mission.sb15monewteam02.article.collection.dto.NaverNewsRespon
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.json.JsonMapper;
 
 @Component
 public class NaverNewsClient {
 
   private final RestClient restClient = RestClient.create();
+  private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
   @Value("${NAVER_CLIENT_ID:}")
   private String clientId;
@@ -25,17 +27,22 @@ public class NaverNewsClient {
         && !newsUrl.isBlank();
   }
 
+  // 네이버 뉴스 검색 및 응답 데이터 변환
   public NaverNewsResponse search(String keyword) {
 
     if (!isEnabled()) {
-      throw new IllegalStateException("네이버 뉴스 API가 비활성화되어 있습니다.");
+      throw new IllegalStateException(
+          "네이버 뉴스 API가 비활성화되어 있습니다."
+      );
     }
 
-    return restClient.get()
+    String response = restClient.get()
         .uri(newsUrl + "?query={keyword}&display=10&sort=date", keyword)
         .header("X-NCP-APIGW-API-KEY-ID", clientId)
         .header("X-NCP-APIGW-API-KEY", clientSecret)
         .retrieve()
-        .body(NaverNewsResponse.class);
+        .body(String.class);
+
+    return jsonMapper.readValue(response, NaverNewsResponse.class);
   }
 }
