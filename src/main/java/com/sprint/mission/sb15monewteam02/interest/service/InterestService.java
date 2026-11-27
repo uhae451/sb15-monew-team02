@@ -8,6 +8,7 @@ import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestOrderBy;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestRepository;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestSearchCondition;
+import com.sprint.mission.sb15monewteam02.interest.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class InterestService {
     private static final double SIMILAR_THRESHOLD = 0.8;
 
     private final InterestRepository interestRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     // 관심사 등록
     public Interest register(String name, List<String> keywords) {
@@ -41,6 +43,8 @@ public class InterestService {
     public void delete(UUID id) {
         Interest interest = interestRepository.findById(id)
                 .orElseThrow(InterestNotFoundException::new);
+        // 구독 내역이 관심사를 FK로 참조하므로 먼저 삭제
+        subscriptionRepository.deleteAllByInterestId(id);
         interestRepository.delete(interest);
     }
 

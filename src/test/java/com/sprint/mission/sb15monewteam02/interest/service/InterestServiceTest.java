@@ -5,6 +5,8 @@ import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarEx
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
 import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestRepository;
+import com.sprint.mission.sb15monewteam02.interest.repository.SubscriptionRepository;
+import org.mockito.InOrder;
 import com.sprint.mission.sb15monewteam02.interest.service.InterestService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,11 +33,14 @@ class InterestServiceTest {
     @Mock
     private InterestRepository interestRepository;
 
+    @Mock
+    private SubscriptionRepository subscriptionRepository;
+
     private InterestService interestService;
 
     @BeforeEach
     void setUp() {
-        interestService = new InterestService(interestRepository);
+        interestService = new InterestService(interestRepository, subscriptionRepository);
     }
 
     @Test
@@ -163,8 +169,10 @@ class InterestServiceTest {
         // when
         interestService.delete(id);
 
-        // then
-        verify(interestRepository).delete(interest);
+        // then: 구독 내역을 먼저 지운 뒤 관심사를 삭제한다
+        InOrder inOrder = inOrder(subscriptionRepository, interestRepository);
+        inOrder.verify(subscriptionRepository).deleteAllByInterestId(id);
+        inOrder.verify(interestRepository).delete(interest);
     }
 
     @Test
