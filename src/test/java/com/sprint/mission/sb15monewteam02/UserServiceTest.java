@@ -1,9 +1,11 @@
 package com.sprint.mission.sb15monewteam02;
 import com.sprint.mission.sb15monewteam02.common.exception.DuplicateEmailException;
 import com.sprint.mission.sb15monewteam02.common.exception.InvalidCredentialsException;
+import com.sprint.mission.sb15monewteam02.common.exception.UserNotFoundException;
 import com.sprint.mission.sb15monewteam02.user.dto.UserCreateRequest;
 import com.sprint.mission.sb15monewteam02.user.dto.UserDto;
 import com.sprint.mission.sb15monewteam02.user.dto.UserLoginRequest;
+import com.sprint.mission.sb15monewteam02.user.dto.UserUpdateRequest;
 import com.sprint.mission.sb15monewteam02.user.entity.User;
 import com.sprint.mission.sb15monewteam02.user.repository.UserRepository;
 import com.sprint.mission.sb15monewteam02.user.service.UserService;
@@ -17,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -146,4 +149,122 @@ class UserServiceTest {
         }
     }
 
+
+    @Nested
+    @DisplayName("사용자 정보 수정")
+    class Update {
+        private final UUID userId = UUID.randomUUID();
+        private final UserUpdateRequest request = new UserUpdateRequest("새닉네임");
+
+        @Test
+        @DisplayName("닉네임을 수정하면 수정된 UserDto를 반환한다")
+        void success() {
+            // given
+            User user = new User("test@example.com", "테스터", "password123");
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            // when
+            UserDto result = userService.update(userId, request);
+            // then
+            assertThat(result.nickname()).isEqualTo("새닉네임");
+            assertThat(user.getNickname()).isEqualTo("새닉네임");   // 엔티티 자체가 바뀌어야 변경 감지로 저장된다
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사용자면 UserNotFoundException이 발생한다")
+        void fail_userNotFound() {
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.update(userId, request))
+                    .isInstanceOf(UserNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("논리 삭제된 사용자는 수정할 수 없다")
+        void fail_deletedUser() {
+            User user = new User("test@example.com", "테스터", "password123");
+            user.delete();
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> userService.update(userId, request))
+                    .isInstanceOf(UserNotFoundException.class);
+            assertThat(user.getNickname()).isEqualTo("테스터");
+        }
+    }
+
+    @Nested
+    @DisplayName("사용자 논리 삭제")
+    class SoftDelete {
+        private final UUID userId = UUID.randomUUID();
+
+        @Test
+        @DisplayName("삭제하면 deletedAt이 기록된다")
+        void success() {
+            User user = new User("test@example.com", "테스터", "password123");
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            userService.softDelete(userId);
+
+            assertThat(user.isDeleted()).isTrue();
+            then(userRepository).should(never()).delete(any());   // 행은 남아 있어야 한다
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사용자면 UserNotFoundException이 발생한다")
+        void fail_userNotFound() {
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.softDelete(userId))
+                    .isInstanceOf(UserNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("이미 논리 삭제된 사용자면 UserNotFoundException이 발생한다")
+        void fail_alreadyDeleted() {
+            User user = new User("test@example.com", "테스터", "password123");
+            user.delete();
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> userService.softDelete(userId))
+                    .isInstanceOf(UserNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("사용자 물리 삭제")
+    class HardDelete {
+        private final UUID userId = UUID.randomUUID();
+
+        @Test
+        @DisplayName("삭제하면 Repository에서 사용자를 지운다")
+        void success() {
+            User user = new User("test@example.com", "테스터", "password123");
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            userService.hardDelete(userId);
+
+            then(userRepository).should().delete(user);
+        }
+
+        @Test
+        @DisplayName("논리 삭제된 사용자도 물리 삭제할 수 있다")
+        void success_deletedUser() {
+            User user = new User("test@example.com", "테스터", "password123");
+            user.delete();
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            userService.hardDelete(userId);
+
+            then(userRepository).should().delete(user);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사용자면 UserNotFoundException이 발생하고 삭제하지 않는다")
+        void fail_userNotFound() {
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.hardDelete(userId))
+                    .isInstanceOf(UserNotFoundException.class);
+            then(userRepository).should(never()).delete(any());
+        }
+    }
 }
