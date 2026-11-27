@@ -3,6 +3,7 @@ package com.sprint.mission.sb15monewteam02.interest.controller;
 import com.sprint.mission.sb15monewteam02.interest.dto.GetInterestResponse;
 import com.sprint.mission.sb15monewteam02.interest.dto.InterestDto;
 import com.sprint.mission.sb15monewteam02.interest.dto.InterestRegisterRequest;
+import com.sprint.mission.sb15monewteam02.interest.dto.InterestUpdateRequest;
 import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestOrderBy;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestSearchCondition;
@@ -29,6 +30,16 @@ public class InterestController {
         return ResponseEntity.status(HttpStatus.CREATED).body(InterestDto.from(interest));
     }
 
+
+    // 관심사 키워드 수정
+    @PatchMapping("/{interestId}")
+    public ResponseEntity<InterestDto> updateKeywords(
+            @PathVariable UUID interestId,
+            @RequestBody InterestUpdateRequest request
+    ) {
+        Interest interest = interestService.updateKeywords(interestId, request.keywords());
+        return ResponseEntity.ok(InterestDto.from(interest));
+    }
 
     // 관심사 삭제
     @DeleteMapping("/{interestId}")
