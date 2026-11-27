@@ -41,7 +41,7 @@ public class InterestController {
     @GetMapping
     public ResponseEntity<GetInterestResponse> getInterests(
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "NAME") InterestOrderBy orderBy,
+            @RequestParam(defaultValue = "name") InterestOrderBy orderBy,
             @RequestParam(defaultValue = "ASC") Sort.Direction direction,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) UUID after,
