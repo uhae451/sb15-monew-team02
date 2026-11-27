@@ -6,11 +6,18 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 public interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
 
     boolean existsByInterestIdAndUserId(UUID interestId, UUID userId);
+
+    // 주어진 관심사들 중 사용자가 구독한 관심사 id만 조회 (subscribedByMe 계산용, 페이지당 쿼리 1번)
+    @Query("SELECT s.interest.id FROM Subscription s WHERE s.userId = :userId AND s.interest.id IN :interestIds")
+    Set<UUID> findSubscribedInterestIds(@Param("userId") UUID userId,
+                                        @Param("interestIds") Collection<UUID> interestIds);
 
     // 구독 취소: 삭제된 행 수를 반환 (0이면 구독한 적 없음)
     @Modifying(flushAutomatically = true, clearAutomatically = true)
