@@ -13,6 +13,7 @@ import com.sprint.mission.sb15monewteam02.article.collection.mapper.NewsArticleM
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
 import com.sprint.mission.sb15monewteam02.article.collection.dto.MatchedNewsArticle;
 import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
+import com.sprint.mission.sb15monewteam02.article.exception.DuplicateArticleException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -516,5 +517,35 @@ class NewsCollectionServiceTest {
     // then
     assertEquals(0, result);
     verifyNoInteractions(articleService);
+  }
+
+  @Test
+  void 기사_중복_저장_충돌시_한번_재시도한다() {
+
+    // given
+    var article = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java 뉴스",
+        Instant.now(),
+        "Java 관련 기사"
+    );
+
+    Set<UUID> interestIds = Set.of(UUID.randomUUID());
+
+    var matched = new MatchedNewsArticle(article, interestIds);
+
+    when(articleService.saveCollectedArticle(article, interestIds))
+        .thenThrow(new DuplicateArticleException())
+        .thenReturn(false);
+
+    // when
+    int result = service.saveArticles(List.of(matched));
+
+    // then
+    assertEquals(0, result);
+
+    verify(articleService, times(2))
+        .saveCollectedArticle(article, interestIds);
   }
 }
