@@ -18,3 +18,9 @@ spring:
       enabled: false
     jdbc:
       initialize-schema: never
+
+# 뉴스 수집 Scheduler 설정
+monew:
+  news:
+    scheduler:
+      enabled: false
