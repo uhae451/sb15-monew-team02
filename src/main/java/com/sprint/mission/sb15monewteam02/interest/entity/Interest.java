@@ -54,7 +54,8 @@ public class Interest {
             throw new InterestNameBlankException();
         }
         validateKeywords(keywords);
-        return new Interest(name, keywords);
+        // 앞뒤 공백은 제거하고 저장 (" 주식 " → "주식")
+        return new Interest(name.strip(), keywords);
     }
 
     // 관심사 수정

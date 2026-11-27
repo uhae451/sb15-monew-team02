@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -84,7 +85,12 @@ public class InterestService {
     }
 
     private boolean isSimilar(String a, String b) {
-        return calculateSimilarity(a, b) >= SIMILAR_THRESHOLD;
+        return calculateSimilarity(normalize(a), normalize(b)) >= SIMILAR_THRESHOLD;
+    }
+
+    // 유사도 비교 전 정규화: 앞뒤 공백 제거 + 소문자 변환 ("ECONOMY", " Economy " → "economy")
+    private String normalize(String name) {
+        return name.strip().toLowerCase(Locale.ROOT);
     }
 
     // 유사도 80% 검증
