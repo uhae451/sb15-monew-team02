@@ -329,7 +329,8 @@ class ArticleControllerTest {
 
     mockMvc.perform(get("/api/articles"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("CMN_400"));
+        .andExpect(jsonPath("$.code").value("CMN_003"));
+
 
     verifyNoInteractions(articleService);
   }
@@ -340,7 +341,7 @@ class ArticleControllerTest {
 
     mockMvc.perform(get("/api/articles/{id}", articleId))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("CMN_400"));
+        .andExpect(jsonPath("$.code").value("CMN_003"));
 
     verifyNoInteractions(articleService);
   }
@@ -352,7 +353,7 @@ class ArticleControllerTest {
     mockMvc.perform(get("/api/articles")
             .header(userHeader, "invalid-uuid"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("CMN_400"));
+        .andExpect(jsonPath("$.code").value("CMN_002"));
 
     verifyNoInteractions(articleService);
   }
