@@ -3,6 +3,8 @@ package com.sprint.mission.sb15monewteam02.interest.controller;
 import com.sprint.mission.sb15monewteam02.common.exception.DuplicateSubscriptionException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestKeywordEmptyException;
 import com.sprint.mission.sb15monewteam02.common.exception.SubscriptionNotFoundException;
+import com.sprint.mission.sb15monewteam02.interest.dto.GetInterestResponse;
+import com.sprint.mission.sb15monewteam02.interest.dto.InterestDto;
 import com.sprint.mission.sb15monewteam02.interest.dto.SubscriptionDto;
 import com.sprint.mission.sb15monewteam02.interest.service.SubscriptionService;
 import java.time.Instant;
@@ -23,6 +25,8 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -116,6 +120,31 @@ class InterestControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("ITR_001"));
+    }
+
+    @Test
+    void 관심사_조회_시_사용자_헤더를_서비스로_전달하고_subscribedByMe를_응답한다() throws Exception {
+        UUID userId = UUID.randomUUID();
+        InterestDto dto = new InterestDto(UUID.randomUUID(), "인공지능", List.of("AI"), 1L, true);
+        when(interestService.search(any(), eq(userId)))
+                .thenReturn(new GetInterestResponse(List.of(dto), null, null, 1, 1L, false));
+
+        mockMvc.perform(get("/api/interests").header(USER_HEADER, userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].subscribedByMe").value(true));
+
+        verify(interestService).search(any(), eq(userId));
+    }
+
+    @Test
+    void 사용자_헤더_없이_조회해도_200을_응답한다() throws Exception {
+        when(interestService.search(any(), isNull()))
+                .thenReturn(new GetInterestResponse(List.of(), null, null, 0, 0L, false));
+
+        mockMvc.perform(get("/api/interests"))
+                .andExpect(status().isOk());
+
+        verify(interestService).search(any(), isNull());
     }
 
     @Test

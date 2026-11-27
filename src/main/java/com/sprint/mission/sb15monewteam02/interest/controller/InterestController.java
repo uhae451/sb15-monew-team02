@@ -80,10 +80,12 @@ public class InterestController {
             @RequestParam(defaultValue = "ASC") Sort.Direction direction,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) UUID after,
-            @RequestParam(defaultValue = "20") int limit
+            @RequestParam(defaultValue = "20") int limit,
+            // subscribedByMe 계산용. 없으면 모두 false로 응답
+            @RequestHeader(value = REQUEST_USER_HEADER, required = false) UUID userId
     ) {
         InterestSearchCondition condition =
                 new InterestSearchCondition(keyword, orderBy, direction, cursor, after, limit);
-        return ResponseEntity.ok(interestService.search(condition));
+        return ResponseEntity.ok(interestService.search(condition, userId));
     }
 }

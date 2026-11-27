@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -49,7 +50,7 @@ public class InterestService {
     }
 
     @Transactional(readOnly = true)
-    public GetInterestResponse search(InterestSearchCondition condition) {
+    public GetInterestResponse search(InterestSearchCondition condition, UUID userId) {
 
         // Limit + 1을 가져와서 다음 페이지가 있는지 계산
         InterestSearchCondition fetchCondition = new InterestSearchCondition(
@@ -61,7 +62,11 @@ public class InterestService {
         boolean hasNext = rows.size() > condition.limit();
         List<Interest> page = hasNext ? rows.subList(0, condition.limit()) : rows;
 
-        List<InterestDto> content = page.stream().map(InterestDto::from).toList();
+        // 이번 페이지 관심사 중 사용자가 구독한 id를 한 번에 조회 (관심사마다 조회하면 N+1)
+        Set<UUID> subscribedIds = findSubscribedInterestIds(userId, page);
+        List<InterestDto> content = page.stream()
+                .map(interest -> InterestDto.from(interest, subscribedIds.contains(interest.getId())))
+                .toList();
 
         String nextCursor = null;
         String nextAfter = null;
@@ -86,6 +91,15 @@ public class InterestService {
 
         interest.updateKeywords(keywords);
         return interest;
+    }
+
+    // 사용자 헤더가 없거나 조회 결과가 비어 있으면 쿼리 없이 빈 Set (모두 subscribedByMe=false)
+    private Set<UUID> findSubscribedInterestIds(UUID userId, List<Interest> interests) {
+        if (userId == null || interests.isEmpty()) {
+            return Set.of();
+        }
+        List<UUID> interestIds = interests.stream().map(Interest::getId).toList();
+        return subscriptionRepository.findSubscribedInterestIds(userId, interestIds);
     }
 
     private boolean isSimilar(String a, String b) {
