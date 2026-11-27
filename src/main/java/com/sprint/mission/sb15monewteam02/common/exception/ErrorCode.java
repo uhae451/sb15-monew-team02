@@ -29,6 +29,7 @@ public enum ErrorCode {
   MISSING_REQUEST_HEADER("CMN_003", "필수 요청 헤더가 누락되었습니다.", HttpStatus.BAD_REQUEST),
   MISSING_REQUEST_PARAMETER("CMN_004", "필수 요청 파라미터가 누락되었습니다.", HttpStatus.BAD_REQUEST),
   INVALID_CURSOR("CMN_005", "유효하지 않은 커서 형식입니다.", HttpStatus.BAD_REQUEST),
+  RESOURCE_NOT_FOUND("CMN_006", "요청한 경로를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
   // 사용자(USR)
   USER_NOT_FOUND("USR_003", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
