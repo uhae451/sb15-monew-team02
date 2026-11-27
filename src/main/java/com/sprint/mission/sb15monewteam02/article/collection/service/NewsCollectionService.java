@@ -78,13 +78,13 @@ public class NewsCollectionService {
         .toList();
   }
 
-  // 개별 기사 저장 실패를 기록하고 나머지 기사의 저장을 계속 진행한다.
+  // 기사 저장 및 전체 저장 실패 처리
   public int saveArticles(List<MatchedNewsArticle> articles) {
 
     int savedCount = 0;
+    int failedCount = 0;
 
     for (MatchedNewsArticle matched : articles) {
-
       try {
         boolean saved = articleService.saveCollectedArticle(
             matched.article(),
@@ -96,9 +96,16 @@ public class NewsCollectionService {
         }
 
       } catch (RuntimeException e) {
+        failedCount++;
+
         log.error("뉴스 기사 저장 실패: {}",
             matched.article().sourceUrl(), e);
       }
+    }
+
+    // 모든 기사 저장에 실패한 경우 예외 발생
+    if (!articles.isEmpty() && failedCount == articles.size()) {
+      throw new IllegalStateException("모든 뉴스 기사 저장 실패");
     }
 
     return savedCount;
