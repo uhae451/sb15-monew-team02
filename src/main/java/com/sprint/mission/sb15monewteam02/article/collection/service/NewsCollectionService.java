@@ -6,6 +6,7 @@ import com.sprint.mission.sb15monewteam02.article.collection.dto.MatchedNewsArti
 import com.sprint.mission.sb15monewteam02.article.collection.filter.NewsKeywordFilter;
 import com.sprint.mission.sb15monewteam02.article.collection.mapper.NewsArticleMapper;
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
+import com.sprint.mission.sb15monewteam02.article.exception.DuplicateArticleException;
 import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -85,11 +87,7 @@ public class NewsCollectionService {
     int failedCount = 0;
 
     for (MatchedNewsArticle matched : articles) {
-      try {
-        boolean saved = articleService.saveCollectedArticle(
-            matched.article(),
-            matched.interestIds()
-        );
+      try {boolean saved = saveWithRetry(matched);
 
         if (saved) {
           savedCount++;
@@ -169,5 +167,44 @@ public class NewsCollectionService {
     return saveArticles(
         filterArticles(articles, interestKeywords)
     );
+  }
+
+  // 중복 저장 충돌이 발생하면 한 번 재시도한다.
+  private boolean saveWithRetry(MatchedNewsArticle matched) {
+    try {
+      return articleService.saveCollectedArticle(
+          matched.article(), matched.interestIds()
+      );
+    } catch (RuntimeException e) {
+      if (!isDuplicateArticle(e)) {
+        throw e;
+      }
+
+      log.warn("기사 중복 저장 충돌 발생, 재시도");
+
+      return articleService.saveCollectedArticle(
+          matched.article(), matched.interestIds()
+      );
+    }
+  }
+
+  // 기사 원본 URL 중복 오류인지 확인한다.
+  private boolean isDuplicateArticle(Throwable error) {
+    for (Throwable cause = error;
+        cause != null;
+        cause = cause.getCause()) {
+
+      if (cause instanceof DuplicateArticleException) {
+        return true;
+      }
+
+      if (cause instanceof ConstraintViolationException violation
+          && "uk_articles_source_url".equalsIgnoreCase(
+          violation.getConstraintName())) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

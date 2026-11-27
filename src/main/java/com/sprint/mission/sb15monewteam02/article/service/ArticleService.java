@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -176,6 +177,7 @@ public class ArticleService {
   }
 
   // 수집한 기사를 저장하고 기존 기사에는 새로운 관심사만 추가한다.
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public boolean saveCollectedArticle(
       ArticleCreateRequest request,
       Set<UUID> interestIds) {
