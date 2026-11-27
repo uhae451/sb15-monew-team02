@@ -469,4 +469,52 @@ class NewsCollectionServiceTest {
     assertEquals(1, result.size());
     assertEquals(article, result.get(0));
   }
+
+  @Test
+  void 모든_뉴스_수집에_실패하면_예외가_발생한다() {
+
+    // given
+    UUID interestId = UUID.randomUUID();
+
+    when(naverNewsClient.isEnabled()).thenReturn(true);
+
+    when(naverNewsClient.search("Java"))
+        .thenThrow(new RuntimeException("네이버 수집 실패"));
+
+    when(rssNewsClient.fetch("한국경제", "https://example.com/rss"))
+        .thenThrow(new RuntimeException("RSS 수집 실패"));
+
+    // when & then
+    assertThrows(IllegalStateException.class,
+        () -> service.collectAndSave(
+            Map.of(interestId, List.of("Java")),
+            Map.of("한국경제", "https://example.com/rss")
+        ));
+
+    verifyNoInteractions(articleService);
+  }
+
+  @Test
+  void 수집된_기사가_없으면_정상_종료한다() {
+
+    // given
+    UUID interestId = UUID.randomUUID();
+
+    when(naverNewsClient.isEnabled()).thenReturn(true);
+
+    when(naverNewsClient.search("Java"))
+        .thenReturn(new NaverNewsResponse(
+            "", 0, 1, 0, List.of()
+        ));
+
+    // when
+    int result = service.collectAndSave(
+        Map.of(interestId, List.of("Java")),
+        Map.of()
+    );
+
+    // then
+    assertEquals(0, result);
+    verifyNoInteractions(articleService);
+  }
 }
