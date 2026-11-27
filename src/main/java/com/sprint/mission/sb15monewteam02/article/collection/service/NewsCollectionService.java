@@ -26,29 +26,41 @@ public class NewsCollectionService {
   private final NewsKeywordFilter newsKeywordFilter;
   private final ArticleService articleService;
 
-  // 네이버 API를 통해 키워드에 해당하는 뉴스를 수집하고 기사 등록 DTO로 변환한다.
+  // 네이버 뉴스 수집 및 기사별 변환
   public List<ArticleCreateRequest> collectNaver(String keyword) {
 
-    // API 인증키가 없는 팀원도 다른 기능을 정상적으로 사용할 수 있도록 네이버 뉴스 수집만 건너뛴다.
     if (!naverNewsClient.isEnabled()) {
       return List.of();
     }
 
-    return naverNewsClient.search(keyword)
-        .items()
-        .stream()
-        .map(newsArticleMapper::fromNaver)
-        .toList();
+    List<ArticleCreateRequest> articles = new ArrayList<>();
+
+    for (var item : naverNewsClient.search(keyword).items()) {
+      try {
+        articles.add(newsArticleMapper.fromNaver(item));
+      } catch (RuntimeException e) {
+        log.warn("네이버 뉴스 기사 변환 실패: {}", item.link(), e);
+      }
+    }
+
+    return articles;
   }
 
-  // 언론사의 RSS 주소를 통해 뉴스를 수집하고 기사 등록 DTO로 변환한다.
+  // RSS 뉴스 수집 및 기사별 변환
   public List<ArticleCreateRequest> collectRss(
-      String source, String rssUrl) {
+      String source, String rssUrl
+  ) {
+    List<ArticleCreateRequest> articles = new ArrayList<>();
 
-    return rssNewsClient.fetch(source, rssUrl)
-        .stream()
-        .map(newsArticleMapper::fromRss)
-        .toList();
+    for (var item : rssNewsClient.fetch(source, rssUrl)) {
+      try {
+        articles.add(newsArticleMapper.fromRss(item));
+      } catch (RuntimeException e) {
+        log.warn("RSS 뉴스 기사 변환 실패: {}", item.link(), e);
+      }
+    }
+
+    return articles;
   }
 
   // 관심사 키워드와 일치하는 기사만 선별하고 관심사 ID를 연결한다.
