@@ -2,10 +2,12 @@ package com.sprint.mission.sb15monewteam02;
 
 
 import com.sprint.mission.sb15monewteam02.common.exception.InvalidCredentialsException;
+import com.sprint.mission.sb15monewteam02.common.exception.UserNotFoundException;
 import com.sprint.mission.sb15monewteam02.user.dto.UserCreateRequest;
 import com.sprint.mission.sb15monewteam02.user.dto.UserDto;
 import com.sprint.mission.sb15monewteam02.common.exception.DuplicateEmailException;
 import com.sprint.mission.sb15monewteam02.user.dto.UserLoginRequest;
+import com.sprint.mission.sb15monewteam02.user.dto.UserUpdateRequest;
 import com.sprint.mission.sb15monewteam02.user.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,9 +24,13 @@ import java.util.UUID;
 
 import static com.sprint.mission.sb15monewteam02.common.exception.ErrorCode.DUPLICATE_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -211,5 +217,93 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
 
         then(userService).should(never()).login(any());
+    }
+
+    @Test
+    @DisplayName("닉네임 수정 성공 시 200 OK와 수정된 사용자 정보를 반환한다")
+    void update_success() throws Exception {
+        UUID userId = UUID.randomUUID();
+        given(userService.update(eq(userId), any(UserUpdateRequest.class)))
+                .willReturn(new UserDto(userId, "test@example.com", "새닉네임", Instant.now()));
+
+        mockMvc.perform(patch("/api/users/{userId}", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "nickname": "새닉네임" }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.nickname").value("새닉네임"))
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @ParameterizedTest(name = "[{index}] nickname = \"{0}\"")
+    @ValueSource(strings = {"", "a", "012345678901234567890"})
+    @DisplayName("수정할 닉네임이 비어 있거나 길이가 맞지 않으면 400을 반환한다")
+    void update_fail_invalidNickname(String nickname) throws Exception {
+        mockMvc.perform(patch("/api/users/{userId}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "nickname": "%s" }
+                            """.formatted(nickname)))
+                .andExpect(status().isBadRequest());
+
+        then(userService).should(never()).update(any(), any());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자를 수정하면 404와 USR_003 코드를 반환한다")
+    void update_fail_userNotFound() throws Exception {
+        given(userService.update(any(), any())).willThrow(new UserNotFoundException());
+
+        mockMvc.perform(patch("/api/users/{userId}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "nickname": "새닉네임" }
+                            """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USR_003"));
+    }
+
+    @Test
+    @DisplayName("논리 삭제 성공 시 204 No Content를 반환한다")
+    void softDelete_success() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/users/{userId}", userId))
+                .andExpect(status().isNoContent());
+
+        then(userService).should().softDelete(userId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자를 논리 삭제하면 404를 반환한다")
+    void softDelete_fail_userNotFound() throws Exception {
+        willThrow(new UserNotFoundException()).given(userService).softDelete(any());
+
+        mockMvc.perform(delete("/api/users/{userId}", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USR_003"));
+    }
+
+    @Test
+    @DisplayName("물리 삭제 성공 시 204 No Content를 반환한다")
+    void hardDelete_success() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/users/{userId}/hard", userId))
+                .andExpect(status().isNoContent());
+
+        then(userService).should().hardDelete(userId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자를 물리 삭제하면 404를 반환한다")
+    void hardDelete_fail_userNotFound() throws Exception {
+        willThrow(new UserNotFoundException()).given(userService).hardDelete(any());
+
+        mockMvc.perform(delete("/api/users/{userId}/hard", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USR_003"));
     }
 }
