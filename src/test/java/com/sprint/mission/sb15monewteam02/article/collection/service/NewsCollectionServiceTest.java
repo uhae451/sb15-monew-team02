@@ -31,15 +31,17 @@ class NewsCollectionServiceTest {
   private final ArticleService articleService =
       mock(ArticleService.class);
 
+  private final NewsArticleMapper newsArticleMapper =
+      spy(new NewsArticleMapper());
+
   private final NewsCollectionService service =
       new NewsCollectionService(
           naverNewsClient,
           rssNewsClient,
-          new NewsArticleMapper(),
+          newsArticleMapper,
           new NewsKeywordFilter(),
           articleService
       );
-
   @Test
   void 네이버_뉴스_수집_테스트() {
 
@@ -412,4 +414,60 @@ class NewsCollectionServiceTest {
     );
   }
 
+  @Test
+  void 네이버_기사_변환_실패시_나머지_기사_수집() {
+
+    // given
+    NaverNewsItem invalidItem = mock(NaverNewsItem.class);
+    NaverNewsItem validItem = mock(NaverNewsItem.class);
+    ArticleCreateRequest article = mock(ArticleCreateRequest.class);
+
+    when(naverNewsClient.isEnabled()).thenReturn(true);
+
+    when(naverNewsClient.search("AI")).thenReturn(
+        new NaverNewsResponse(
+            "", 2, 1, 2, List.of(invalidItem, validItem)
+        )
+    );
+
+    doThrow(new IllegalArgumentException("변환 실패"))
+        .when(newsArticleMapper).fromNaver(invalidItem);
+
+    doReturn(article)
+        .when(newsArticleMapper).fromNaver(validItem);
+
+    // when
+    var result = service.collectNaver("AI");
+
+    // then
+    assertEquals(1, result.size());
+    assertEquals(article, result.get(0));
+  }
+
+  @Test
+  void RSS_기사_변환_실패시_나머지_기사_수집() {
+
+    // given
+    RssNewsItem invalidItem = mock(RssNewsItem.class);
+    RssNewsItem validItem = mock(RssNewsItem.class);
+    ArticleCreateRequest article = mock(ArticleCreateRequest.class);
+
+    when(rssNewsClient.fetch("한국경제", "https://example.com/rss"))
+        .thenReturn(List.of(invalidItem, validItem));
+
+    doThrow(new IllegalArgumentException("변환 실패"))
+        .when(newsArticleMapper).fromRss(invalidItem);
+
+    doReturn(article)
+        .when(newsArticleMapper).fromRss(validItem);
+
+    // when
+    var result = service.collectRss(
+        "한국경제", "https://example.com/rss"
+    );
+
+    // then
+    assertEquals(1, result.size());
+    assertEquals(article, result.get(0));
+  }
 }
