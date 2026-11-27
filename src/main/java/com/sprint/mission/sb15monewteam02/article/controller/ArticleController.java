@@ -20,6 +20,10 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "뉴스 기사 관리", description = "뉴스 기사 조회, 검색 및 삭제 API")
 @RestController
 @RequestMapping("/api/articles")
 public class ArticleController {
@@ -31,6 +35,8 @@ public class ArticleController {
   }
 
   // 1. 기사 목록 조회, 검색, 정렬, 페이지네이션
+  @Operation(summary = "기사 목록 조회",
+      description = "검색, 관심사, 출처, 날짜 필터링 및 커서 페이지네이션")
   @GetMapping
   public ResponseEntity<ArticlePage> getArticles(
       @RequestParam(required = false) String keyword,
@@ -65,6 +71,7 @@ public class ArticleController {
   }
 
   // 2. 기사 상세 조회
+  @Operation(summary = "기사 상세 조회")
   @GetMapping("/{articleId}")
   public ResponseEntity<ArticleResponse> getArticle(
       @PathVariable UUID articleId,
@@ -77,6 +84,7 @@ public class ArticleController {
   }
 
   // 3. 뉴스 출처 목록 조회
+  @Operation(summary = "뉴스 출처 목록 조회")
   @GetMapping("/sources")
   public ResponseEntity<List<String>> getSources() {
 
@@ -86,6 +94,8 @@ public class ArticleController {
   }
 
   // 4. 기사 조회 기록 등록 및 중복 조회 처리
+  @Operation(summary = "기사 조회 기록 등록",
+      description = "동일 사용자의 중복 조회는 1회로 처리")
   @PostMapping("/{articleId}/article-views")
   public ResponseEntity<ArticleViewResponse> recordView(
       @PathVariable UUID articleId,
@@ -98,6 +108,7 @@ public class ArticleController {
   }
 
   // 5. 기사 논리 삭제
+  @Operation(summary = "기사 논리 삭제")
   @DeleteMapping("/{articleId}")
   public ResponseEntity<Void> softDelete(
       @PathVariable UUID articleId
@@ -109,6 +120,7 @@ public class ArticleController {
   }
 
   // 6. 기사 물리 삭제
+  @Operation(summary = "기사 물리 삭제")
   @DeleteMapping("/{articleId}/hard")
   public ResponseEntity<Void> hardDelete(
       @PathVariable UUID articleId
