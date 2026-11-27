@@ -16,8 +16,9 @@ spring:
     job:
       enabled: false
     jdbc:
-      initialize-schema: never
-
+      initialize-schema: always
+      schema: classpath:db/batch/schema-postgresql.sql
+      continue-on-error: false
 management:
   health:
     # MongoDB는 아직 사용하지 않고 docker-compose에도 없어서, 헬스체크에서 제외 (사용 시 다시 활성화)
