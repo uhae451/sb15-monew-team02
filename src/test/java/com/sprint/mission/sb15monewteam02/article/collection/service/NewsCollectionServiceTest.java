@@ -299,7 +299,7 @@ class NewsCollectionServiceTest {
 
   // 모든 기사 저장에 실패하면 신규 저장 건수 0을 반환한다.
   @Test
-  void 모든_기사_저장에_실패하면_0을_반환한다() {
+  void 모든_기사_저장에_실패하면_예외가_발생한다() {
 
     var article = new ArticleCreateRequest(
         "NAVER",
@@ -316,9 +316,8 @@ class NewsCollectionServiceTest {
     when(articleService.saveCollectedArticle(article, interestIds))
         .thenThrow(new RuntimeException("기사 저장 실패"));
 
-    int result = service.saveArticles(List.of(matched));
-
-    assertEquals(0, result);
+    assertThrows(IllegalStateException.class,
+        () -> service.saveArticles(List.of(matched)));
   }
 
   // 뉴스 수집부터 관심사 필터링 및 저장까지 전체 흐름을 검증한다.
