@@ -4,10 +4,12 @@ import com.sprint.mission.sb15monewteam02.interest.dto.GetInterestResponse;
 import com.sprint.mission.sb15monewteam02.interest.dto.InterestDto;
 import com.sprint.mission.sb15monewteam02.interest.dto.InterestRegisterRequest;
 import com.sprint.mission.sb15monewteam02.interest.dto.InterestUpdateRequest;
+import com.sprint.mission.sb15monewteam02.interest.dto.SubscriptionDto;
 import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestOrderBy;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestSearchCondition;
 import com.sprint.mission.sb15monewteam02.interest.service.InterestService;
+import com.sprint.mission.sb15monewteam02.interest.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -21,7 +23,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InterestController {
 
+    private static final String REQUEST_USER_HEADER = "Monew-Request-User-ID";
+
     private final InterestService interestService;
+    private final SubscriptionService subscriptionService;
 
     // 관심사 등록(register) api
     @PostMapping
@@ -46,6 +51,25 @@ public class InterestController {
     public ResponseEntity<Void> delete(@PathVariable UUID interestId) {
         interestService.delete(interestId);
         return ResponseEntity.noContent().build();
+    }
+
+    // 관심사 구독
+    @PostMapping("/{interestId}/subscriptions")
+    public ResponseEntity<SubscriptionDto> subscribe(
+            @PathVariable UUID interestId,
+            @RequestHeader(REQUEST_USER_HEADER) UUID userId
+    ) {
+        return ResponseEntity.ok(subscriptionService.subscribe(interestId, userId));
+    }
+
+    // 관심사 구독 취소
+    @DeleteMapping("/{interestId}/subscriptions")
+    public ResponseEntity<Void> unsubscribe(
+            @PathVariable UUID interestId,
+            @RequestHeader(REQUEST_USER_HEADER) UUID userId
+    ) {
+        subscriptionService.unsubscribe(interestId, userId);
+        return ResponseEntity.ok().build();
     }
 
     // 관심사 조회
