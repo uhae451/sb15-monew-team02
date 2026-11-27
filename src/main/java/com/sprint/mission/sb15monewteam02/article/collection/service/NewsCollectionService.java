@@ -111,42 +111,63 @@ public class NewsCollectionService {
     return savedCount;
   }
 
-  // 뉴스 수집, 관심사 필터링, 기사 저장을 순차적으로 수행한다.
+  // 뉴스 수집, 관심사 필터링 및 저장을 수행한다.
   public int collectAndSave(
       Map<UUID, List<String>> interestKeywords,
       Map<String, String> rssSources) {
 
-    // 등록된 관심사가 없으면 뉴스 수집을 진행하지 않는다.
     if (interestKeywords.isEmpty()) {
       return 0;
     }
 
     List<ArticleCreateRequest> articles = new ArrayList<>();
 
-    // 중복 키워드를 제거하고 네이버 뉴스를 수집한다.
-    interestKeywords.values().stream()
+    int attemptedCount = 0;
+    int failedCount = 0;
+
+    // 중복 키워드 제거
+    List<String> keywords = interestKeywords.values().stream()
         .flatMap(List::stream)
         .filter(keyword -> keyword != null && !keyword.isBlank())
         .map(String::trim)
         .distinct()
-        .forEach(keyword -> {
-          try {
-            articles.addAll(collectNaver(keyword));
-          } catch (RuntimeException e) {
-            log.error("네이버 뉴스 수집 실패: {}", keyword, e);
-          }
-        });
+        .toList();
 
-    // 언론사별 RSS 뉴스를 수집한다.
-    rssSources.forEach((source, url) -> {
-      try {
-        articles.addAll(collectRss(source, url));
-      } catch (RuntimeException e) {
-        log.error("RSS 뉴스 수집 실패: {}", source, e);
+    // 네이버 뉴스 수집
+    if (naverNewsClient.isEnabled()) {
+      for (String keyword : keywords) {
+        attemptedCount++;
+
+        try {
+          articles.addAll(collectNaver(keyword));
+        } catch (RuntimeException e) {
+          failedCount++;
+          log.error("네이버 뉴스 수집 실패: {}", keyword, e);
+        }
       }
-    });
+    }
 
-    // 관심사와 일치하는 기사를 선별하고 저장한다.
-    return saveArticles(filterArticles(articles, interestKeywords));
+    // RSS 뉴스 수집
+    for (var entry : rssSources.entrySet()) {
+      attemptedCount++;
+
+      try {
+        articles.addAll(
+            collectRss(entry.getKey(), entry.getValue())
+        );
+      } catch (RuntimeException e) {
+        failedCount++;
+        log.error("RSS 뉴스 수집 실패: {}", entry.getKey(), e);
+      }
+    }
+
+    // 시도한 모든 뉴스 수집이 실패한 경우
+    if (attemptedCount > 0 && attemptedCount == failedCount) {
+      throw new IllegalStateException("모든 뉴스 수집 실패");
+    }
+
+    return saveArticles(
+        filterArticles(articles, interestKeywords)
+    );
   }
 }
