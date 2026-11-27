@@ -105,6 +105,16 @@ class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.message").value(ErrorCode.INTERNAL_ERROR.getMessage()));
   }
 
+  @Test
+  @DisplayName("존재하지 않는 경로 요청 시 500이 아닌 404를 반환한다")
+  void handlesNotFound() throws Exception {
+    mockMvc.perform(get("/test/not-exists"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$.code").value(ErrorCode.RESOURCE_NOT_FOUND.getCode()))
+        .andExpect(jsonPath("$.message").value(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+  }
+
   @RestController
   @Validated
   static class DummyController {

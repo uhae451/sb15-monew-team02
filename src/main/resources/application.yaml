@@ -11,3 +11,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+management:
+  health:
+    # MongoDB는 아직 사용하지 않고 docker-compose에도 없어서, 헬스체크에서 제외 (사용 시 다시 활성화)
+    mongodb:
+      enabled: false
