@@ -1,5 +1,6 @@
 package com.sprint.mission.sb15monewteam02.article.collection.batch;
 
+import com.sprint.mission.sb15monewteam02.article.collection.metrics.NewsCollectionJobListener;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
@@ -27,9 +28,11 @@ public class NewsCollectionJobConfig {
   @Bean
   public Job newsCollectionJob(
       JobRepository jobRepository,
-      @Qualifier("newsCollectionStep") Step newsCollectionStep
+      @Qualifier("newsCollectionStep") Step newsCollectionStep,
+      NewsCollectionJobListener listener
   ) {
     return new JobBuilder("newsCollectionJob", jobRepository)
+        .listener(listener)
         .start(newsCollectionStep)
         .build();
   }
