@@ -1,6 +1,7 @@
 package com.sprint.mission.sb15monewteam02.common.exception;
 
 import com.sprint.mission.sb15monewteam02.common.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.format.DateTimeParseException;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -65,6 +68,16 @@ public class GlobalExceptionHandler {
       MethodArgumentTypeMismatchException exception) {
     log.warn("요청 파라미터 타입이 올바르지 않습니다: {}={}", exception.getName(), exception.getValue());
     return ResponseEntity.badRequest().body(ErrorResponse.of(ErrorCode.INVALID_TYPE_VALUE));
+  }
+
+  // 존재하지 않는 경로 요청은 서버 오류가 아니므로 404 + warn 로그로 처리한다.
+  // (없으면 아래 Exception 핸들러가 잡아서 500 + ERROR 로그가 남는다)
+  @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+  public ResponseEntity<ErrorResponse> handleNotFound(
+      Exception exception, HttpServletRequest request) {
+    log.warn("존재하지 않는 경로로 요청했습니다: {} {}", request.getMethod(), request.getRequestURI());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(ErrorResponse.of(ErrorCode.RESOURCE_NOT_FOUND));
   }
 
   @ExceptionHandler(Exception.class)
