@@ -13,7 +13,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
+@DataJpaTest(properties = {
+        // 로컬 도커 Postgres(monew-postgres, 5433) 접속 정보 - 이 테스트에서만 덮어씀
+        "spring.datasource.url=jdbc:postgresql://localhost:5433/postgres",
+        "spring.datasource.username=postgres",
+        "spring.datasource.password=${DB_PASSWORD}",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
+})
 // 로컬 DB로 테스트
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class InterestRepositoryTest {
