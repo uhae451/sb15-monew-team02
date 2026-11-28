@@ -3,8 +3,16 @@ package com.sprint.mission.sb15monewteam02.interest.service;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestKeywordEmptyException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
+import com.sprint.mission.sb15monewteam02.interest.dto.GetInterestResponse;
+import com.sprint.mission.sb15monewteam02.interest.dto.InterestDto;
 import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.repository.InterestOrderBy;
 import com.sprint.mission.sb15monewteam02.interest.repository.InterestRepository;
+import com.sprint.mission.sb15monewteam02.interest.repository.InterestSearchCondition;
+import org.springframework.data.domain.Sort;
+import org.springframework.test.util.ReflectionTestUtils;
+import com.sprint.mission.sb15monewteam02.interest.repository.SubscriptionRepository;
+import org.mockito.InOrder;
 import com.sprint.mission.sb15monewteam02.interest.service.InterestService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,12 +22,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,11 +42,14 @@ class InterestServiceTest {
     @Mock
     private InterestRepository interestRepository;
 
+    @Mock
+    private SubscriptionRepository subscriptionRepository;
+
     private InterestService interestService;
 
     @BeforeEach
     void setUp() {
-        interestService = new InterestService(interestRepository);
+        interestService = new InterestService(interestRepository, subscriptionRepository);
     }
 
     @Test
@@ -163,8 +178,10 @@ class InterestServiceTest {
         // when
         interestService.delete(id);
 
-        // then
-        verify(interestRepository).delete(interest);
+        // then: 구독 내역을 먼저 지운 뒤 관심사를 삭제한다
+        InOrder inOrder = inOrder(subscriptionRepository, interestRepository);
+        inOrder.verify(subscriptionRepository).deleteAllByInterestId(id);
+        inOrder.verify(interestRepository).delete(interest);
     }
 
     @Test
@@ -222,5 +239,64 @@ class InterestServiceTest {
                 .isInstanceOf(InterestKeywordEmptyException.class);
 
         assertThat(interest.getKeywords()).containsExactly("AI");
+    }
+
+    @Test
+    void 조회하면_사용자가_구독한_관심사만_subscribedByMe가_true다() {
+
+        // given
+        UUID userId = UUID.randomUUID();
+        Interest subscribed = interestWithId("인공지능");
+        Interest notSubscribed = interestWithId("경제");
+        when(interestRepository.searchInterests(any())).thenReturn(List.of(subscribed, notSubscribed));
+        when(subscriptionRepository.findSubscribedInterestIds(eq(userId), any()))
+                .thenReturn(Set.of(subscribed.getId()));
+
+        // when
+        GetInterestResponse response = interestService.search(searchCondition(), userId);
+
+        // then
+        assertThat(response.content())
+                .extracting(InterestDto::name, InterestDto::subscribedByMe)
+                .containsExactly(tuple("인공지능", true), tuple("경제", false));
+    }
+
+    @Test
+    void 사용자_정보_없이_조회하면_모두_subscribedByMe가_false이고_구독_조회를_하지_않는다() {
+
+        // given
+        when(interestRepository.searchInterests(any())).thenReturn(List.of(interestWithId("인공지능")));
+
+        // when
+        GetInterestResponse response = interestService.search(searchCondition(), null);
+
+        // then
+        assertThat(response.content()).extracting(InterestDto::subscribedByMe).containsExactly(false);
+        verify(subscriptionRepository, never()).findSubscribedInterestIds(any(), any());
+    }
+
+    @Test
+    void 조회_결과가_없으면_구독_조회를_하지_않는다() {
+
+        // given
+        when(interestRepository.searchInterests(any())).thenReturn(List.of());
+
+        // when
+        GetInterestResponse response = interestService.search(searchCondition(), UUID.randomUUID());
+
+        // then
+        assertThat(response.content()).isEmpty();
+        verify(subscriptionRepository, never()).findSubscribedInterestIds(any(), any());
+    }
+
+    private InterestSearchCondition searchCondition() {
+        return new InterestSearchCondition(null, InterestOrderBy.NAME, Sort.Direction.ASC, null, null, 20);
+    }
+
+    // 엔티티 id는 DB 저장 시 생성되므로, 단위 테스트에서는 직접 넣어준다
+    private Interest interestWithId(String name) {
+        Interest interest = Interest.create(name, List.of("k"));
+        ReflectionTestUtils.setField(interest, "id", UUID.randomUUID());
+        return interest;
     }
 }
