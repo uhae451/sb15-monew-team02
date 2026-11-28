@@ -8,6 +8,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.web.client.UnknownContentTypeException;
 
 @SpringJUnitConfig(NaverNewsClient.class)
 @TestPropertySource(locations = "file:./.env")
@@ -28,7 +29,16 @@ class NaverNewsClientTest {
     assertTrue(naverNewsClient.isEnabled());
 
     // when
-    NaverNewsResponse response = naverNewsClient.search(keyword);
+    NaverNewsResponse response;
+
+    try {
+      response = naverNewsClient.search(keyword);
+    } catch (UnknownContentTypeException e) {
+      String body = e.getResponseBodyAsString();
+      System.out.println("실제 응답: " +
+          body.substring(0, Math.min(body.length(), 300)));
+      throw e;
+    }
 
     // then
     assertNotNull(response);

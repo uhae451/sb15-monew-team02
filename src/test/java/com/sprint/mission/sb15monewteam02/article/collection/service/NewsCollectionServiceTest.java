@@ -13,6 +13,7 @@ import com.sprint.mission.sb15monewteam02.article.collection.mapper.NewsArticleM
 import com.sprint.mission.sb15monewteam02.article.dto.ArticleCreateRequest;
 import com.sprint.mission.sb15monewteam02.article.collection.dto.MatchedNewsArticle;
 import com.sprint.mission.sb15monewteam02.article.service.ArticleService;
+import com.sprint.mission.sb15monewteam02.article.exception.DuplicateArticleException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -31,15 +32,17 @@ class NewsCollectionServiceTest {
   private final ArticleService articleService =
       mock(ArticleService.class);
 
+  private final NewsArticleMapper newsArticleMapper =
+      spy(new NewsArticleMapper());
+
   private final NewsCollectionService service =
       new NewsCollectionService(
           naverNewsClient,
           rssNewsClient,
-          new NewsArticleMapper(),
+          newsArticleMapper,
           new NewsKeywordFilter(),
           articleService
       );
-
   @Test
   void 네이버_뉴스_수집_테스트() {
 
@@ -297,7 +300,7 @@ class NewsCollectionServiceTest {
 
   // 모든 기사 저장에 실패하면 신규 저장 건수 0을 반환한다.
   @Test
-  void 모든_기사_저장에_실패하면_0을_반환한다() {
+  void 모든_기사_저장에_실패하면_예외가_발생한다() {
 
     var article = new ArticleCreateRequest(
         "NAVER",
@@ -314,9 +317,8 @@ class NewsCollectionServiceTest {
     when(articleService.saveCollectedArticle(article, interestIds))
         .thenThrow(new RuntimeException("기사 저장 실패"));
 
-    int result = service.saveArticles(List.of(matched));
-
-    assertEquals(0, result);
+    assertThrows(IllegalStateException.class,
+        () -> service.saveArticles(List.of(matched)));
   }
 
   // 뉴스 수집부터 관심사 필터링 및 저장까지 전체 흐름을 검증한다.
@@ -412,4 +414,138 @@ class NewsCollectionServiceTest {
     );
   }
 
+  @Test
+  void 네이버_기사_변환_실패시_나머지_기사_수집() {
+
+    // given
+    NaverNewsItem invalidItem = mock(NaverNewsItem.class);
+    NaverNewsItem validItem = mock(NaverNewsItem.class);
+    ArticleCreateRequest article = mock(ArticleCreateRequest.class);
+
+    when(naverNewsClient.isEnabled()).thenReturn(true);
+
+    when(naverNewsClient.search("AI")).thenReturn(
+        new NaverNewsResponse(
+            "", 2, 1, 2, List.of(invalidItem, validItem)
+        )
+    );
+
+    doThrow(new IllegalArgumentException("변환 실패"))
+        .when(newsArticleMapper).fromNaver(invalidItem);
+
+    doReturn(article)
+        .when(newsArticleMapper).fromNaver(validItem);
+
+    // when
+    var result = service.collectNaver("AI");
+
+    // then
+    assertEquals(1, result.size());
+    assertEquals(article, result.get(0));
+  }
+
+  @Test
+  void RSS_기사_변환_실패시_나머지_기사_수집() {
+
+    // given
+    RssNewsItem invalidItem = mock(RssNewsItem.class);
+    RssNewsItem validItem = mock(RssNewsItem.class);
+    ArticleCreateRequest article = mock(ArticleCreateRequest.class);
+
+    when(rssNewsClient.fetch("한국경제", "https://example.com/rss"))
+        .thenReturn(List.of(invalidItem, validItem));
+
+    doThrow(new IllegalArgumentException("변환 실패"))
+        .when(newsArticleMapper).fromRss(invalidItem);
+
+    doReturn(article)
+        .when(newsArticleMapper).fromRss(validItem);
+
+    // when
+    var result = service.collectRss(
+        "한국경제", "https://example.com/rss"
+    );
+
+    // then
+    assertEquals(1, result.size());
+    assertEquals(article, result.get(0));
+  }
+
+  @Test
+  void 모든_뉴스_수집에_실패하면_예외가_발생한다() {
+
+    // given
+    UUID interestId = UUID.randomUUID();
+
+    when(naverNewsClient.isEnabled()).thenReturn(true);
+
+    when(naverNewsClient.search("Java"))
+        .thenThrow(new RuntimeException("네이버 수집 실패"));
+
+    when(rssNewsClient.fetch("한국경제", "https://example.com/rss"))
+        .thenThrow(new RuntimeException("RSS 수집 실패"));
+
+    // when & then
+    assertThrows(IllegalStateException.class,
+        () -> service.collectAndSave(
+            Map.of(interestId, List.of("Java")),
+            Map.of("한국경제", "https://example.com/rss")
+        ));
+
+    verifyNoInteractions(articleService);
+  }
+
+  @Test
+  void 수집된_기사가_없으면_정상_종료한다() {
+
+    // given
+    UUID interestId = UUID.randomUUID();
+
+    when(naverNewsClient.isEnabled()).thenReturn(true);
+
+    when(naverNewsClient.search("Java"))
+        .thenReturn(new NaverNewsResponse(
+            "", 0, 1, 0, List.of()
+        ));
+
+    // when
+    int result = service.collectAndSave(
+        Map.of(interestId, List.of("Java")),
+        Map.of()
+    );
+
+    // then
+    assertEquals(0, result);
+    verifyNoInteractions(articleService);
+  }
+
+  @Test
+  void 기사_중복_저장_충돌시_한번_재시도한다() {
+
+    // given
+    var article = new ArticleCreateRequest(
+        "NAVER",
+        "https://example.com/news/1",
+        "Java 뉴스",
+        Instant.now(),
+        "Java 관련 기사"
+    );
+
+    Set<UUID> interestIds = Set.of(UUID.randomUUID());
+
+    var matched = new MatchedNewsArticle(article, interestIds);
+
+    when(articleService.saveCollectedArticle(article, interestIds))
+        .thenThrow(new DuplicateArticleException())
+        .thenReturn(false);
+
+    // when
+    int result = service.saveArticles(List.of(matched));
+
+    // then
+    assertEquals(0, result);
+
+    verify(articleService, times(2))
+        .saveCollectedArticle(article, interestIds);
+  }
 }

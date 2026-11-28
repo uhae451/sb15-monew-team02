@@ -11,9 +11,27 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+  # Spring Batch 설정
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: always
+      schema: classpath:db/batch/schema-postgresql.sql
+      continue-on-error: false
 management:
   health:
     # MongoDB는 아직 사용하지 않고 docker-compose에도 없어서, 헬스체크에서 제외 (사용 시 다시 활성화)
     mongodb:
+      enabled: false
+  # Actuator 모니터링 설정
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics
+
+# 뉴스 수집 Scheduler 설정
+monew:
+  news:
+    scheduler:
       enabled: false
