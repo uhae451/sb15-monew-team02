@@ -1,4 +1,4 @@
-package com.sprint.mission.sb15monewteam02.common.interest.repository;
+package com.sprint.mission.sb15monewteam02.interest.repository;
 
 import org.springframework.data.domain.Sort;
 

@@ -1,4 +1,4 @@
-package com.sprint.mission.sb15monewteam02.common.interest.dto;
+package com.sprint.mission.sb15monewteam02.interest.dto;
 
 import java.util.List;
 

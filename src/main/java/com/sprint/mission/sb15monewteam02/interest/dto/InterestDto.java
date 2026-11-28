@@ -1,6 +1,6 @@
-package com.sprint.mission.sb15monewteam02.common.interest.dto;
+package com.sprint.mission.sb15monewteam02.interest.dto;
 
-import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
 
 import java.util.List;
 import java.util.UUID;

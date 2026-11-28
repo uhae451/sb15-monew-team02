@@ -1,9 +1,11 @@
-package com.sprint.mission.sb15monewteam02.common.interest.controller;
+package com.sprint.mission.sb15monewteam02.interest.controller;
 
+import com.sprint.mission.sb15monewteam02.common.exception.InterestKeywordEmptyException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
-import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
-import com.sprint.mission.sb15monewteam02.common.interest.service.InterestService;
+import com.sprint.mission.sb15monewteam02.interest.controller.InterestController;
+import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.service.InterestService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -74,6 +76,36 @@ class InterestControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("인공지능"));
+    }
+
+    @Test
+    void 존재하지_않는_관심사의_키워드를_수정하면_404를_응답한다() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(interestService.updateKeywords(eq(id), any()))
+                .thenThrow(new InterestNotFoundException());
+
+        mockMvc.perform(patch("/api/interests/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"keywords": ["LLM"]}
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ITR_004"));
+    }
+
+    @Test
+    void 빈_키워드로_수정하면_400을_응답한다() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(interestService.updateKeywords(eq(id), eq(List.of())))
+                .thenThrow(new InterestKeywordEmptyException());
+
+        mockMvc.perform(patch("/api/interests/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"keywords": []}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("ITR_001"));
     }
 
     @Test

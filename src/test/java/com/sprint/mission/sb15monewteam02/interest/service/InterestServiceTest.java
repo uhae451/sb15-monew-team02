@@ -1,10 +1,11 @@
-package com.sprint.mission.sb15monewteam02.common.interest.service;
+package com.sprint.mission.sb15monewteam02.interest.service;
 
 import com.sprint.mission.sb15monewteam02.common.exception.InterestKeywordEmptyException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNameSimilarException;
 import com.sprint.mission.sb15monewteam02.common.exception.InterestNotFoundException;
-import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
-import com.sprint.mission.sb15monewteam02.common.interest.repository.InterestRepository;
+import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.repository.InterestRepository;
+import com.sprint.mission.sb15monewteam02.interest.service.InterestService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,12 +68,55 @@ class InterestServiceTest {
     }
 
     @Test
+    void 대소문자만_다른_이름은_유사한_이름으로_보고_등록할_수_없다() {
+
+        // given
+        Interest existing = Interest.create("Economy", List.of("경제"));
+        when(interestRepository.findAll()).thenReturn(List.of(existing));
+
+        // when & then
+        assertThatThrownBy(() -> interestService.register("ECONOMY", List.of("경제")))
+                .isInstanceOf(InterestNameSimilarException.class);
+
+        verify(interestRepository, never()).save(any(Interest.class));
+    }
+
+    @Test
+    void 앞뒤_공백만_다른_이름은_유사한_이름으로_보고_등록할_수_없다() {
+
+        // given
+        Interest existing = Interest.create("주식", List.of("증시"));
+        when(interestRepository.findAll()).thenReturn(List.of(existing));
+
+        // when & then
+        assertThatThrownBy(() -> interestService.register("  주식  ", List.of("증시")))
+                .isInstanceOf(InterestNameSimilarException.class);
+
+        verify(interestRepository, never()).save(any(Interest.class));
+    }
+
+    @Test
     void 관심사를_생성하면_여러_키워드가_그대로_보존된다() {
 
         // when
         Interest interest = Interest.create("인공지능", List.of("AI", "머신러닝"));
         //then
         assertThat(interest.getKeywords()).containsExactly("AI", "머신러닝");
+    }
+
+    @Test
+    void 관심사_이름의_앞뒤_공백은_제거하고_저장한다() {
+
+        // given
+        when(interestRepository.findAll()).thenReturn(List.of());
+        when(interestRepository.save(any(Interest.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        Interest result = interestService.register("  인공지능  ", List.of("AI"));
+
+        // then
+        assertThat(result.getName()).isEqualTo("인공지능");
     }
 
     @Test
