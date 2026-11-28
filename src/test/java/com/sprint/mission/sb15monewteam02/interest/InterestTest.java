@@ -1,7 +1,7 @@
-package com.sprint.mission.sb15monewteam02.common.interest;
+package com.sprint.mission.sb15monewteam02.interest;
 
 import com.sprint.mission.sb15monewteam02.common.exception.InterestKeywordEmptyException;
-import com.sprint.mission.sb15monewteam02.common.interest.entity.Interest;
+import com.sprint.mission.sb15monewteam02.interest.entity.Interest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
